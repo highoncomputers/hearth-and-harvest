@@ -15,34 +15,60 @@ export class Terrain {
   }
 
   generate() {
-    const geo = new THREE.PlaneGeometry(this.size, this.size, this.segments, this.segments);
-    geo.rotateX(-Math.PI / 2);
+    const segs = this.segments;
+    const size = this.size;
+    const half = size / 2;
 
-    const positions = geo.attributes.position;
+    const vertCount = (segs + 1) * (segs + 1);
+    const positions = new Float32Array(vertCount * 3);
     this.heightData = [];
 
-    for (let i = 0; i < positions.count; i++) {
-      const x = positions.getX(i);
-      const z = positions.getZ(i);
-      const nx = (x + this.size / 2) / this.size;
-      const nz = (z + this.size / 2) / this.size;
+    let idx = 0;
+    for (let iz = 0; iz <= segs; iz++) {
+      const z = -half + iz * (size / segs);
+      for (let ix = 0; ix <= segs; ix++) {
+        const x = -half + ix * (size / segs);
+        const nx = (x + half) / size;
+        const nz = (z + half) / size;
 
-      let h = fbm(nx * 3 + this.seed, nz * 3 + this.seed, 4);
-      h = h * 0.5 + 0.5;
-      h = Math.pow(h, 1.5);
-      h = h * this.maxHeight;
+        let h = fbm(nx * 3 + this.seed, nz * 3 + this.seed, 4);
+        h = h * 0.5 + 0.5;
+        h = Math.pow(h, 1.5);
+        h = h * this.maxHeight;
+        if (h < 0.8) h = 0.3;
 
-      if (h < 0.8) h = 0.3;
-      positions.setY(i, h);
-      this.heightData.push(h);
+        positions[idx] = x;
+        positions[idx + 1] = h;
+        positions[idx + 2] = z;
+        idx += 3;
+        this.heightData.push(h);
+      }
     }
 
+    const triCount = segs * segs * 6;
+    const indices = new Uint16Array(triCount);
+    idx = 0;
+    for (let iz = 0; iz < segs; iz++) {
+      for (let ix = 0; ix < segs; ix++) {
+        const a = iz * (segs + 1) + ix;
+        const b = iz * (segs + 1) + ix + 1;
+        const c = (iz + 1) * (segs + 1) + ix;
+        const d = (iz + 1) * (segs + 1) + ix + 1;
+        indices[idx] = a; indices[idx + 1] = b; indices[idx + 2] = c;
+        indices[idx + 3] = b; indices[idx + 4] = d; indices[idx + 5] = c;
+        idx += 6;
+      }
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setIndex(new THREE.BufferAttribute(indices, 1));
     geo.computeVertexNormals();
 
-    const colors = new Float32Array(positions.count * 3);
-    for (let i = 0; i < positions.count; i++) {
-      const y = positions.getY(i);
-      const ty = (y / this.maxHeight);
+    const colors = new Float32Array(vertCount * 3);
+    for (let i = 0; i < vertCount; i++) {
+      const y = positions[i * 3 + 1];
+      const ty = y / this.maxHeight;
       let r, g, b;
       if (ty < 0.15) {
         r = 0.6; g = 0.5; b = 0.3;

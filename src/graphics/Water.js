@@ -10,9 +10,7 @@ export class Water {
   }
 
   init() {
-    const geo = new THREE.PlaneGeometry(this.size, this.size, 64, 64);
-    geo.rotateX(-Math.PI / 2);
-
+    const geo = this._buildWaterGeometry(64);
     const mat = new THREE.MeshStandardMaterial({
       color: 0x1A5A8A,
       transparent: true,
@@ -26,8 +24,46 @@ export class Water {
     this.mesh.position.y = 0.5;
     this.mesh.receiveShadow = true;
     this.scene.add(this.mesh);
+  }
 
-    this.basePositions = new Float32Array(geo.attributes.position.array);
+  _buildWaterGeometry(segs) {
+    const size = this.size;
+    const half = size / 2;
+    const vertCount = (segs + 1) * (segs + 1);
+    const positions = new Float32Array(vertCount * 3);
+
+    let idx = 0;
+    for (let iz = 0; iz <= segs; iz++) {
+      const z = -half + iz * (size / segs);
+      for (let ix = 0; ix <= segs; ix++) {
+        const x = -half + ix * (size / segs);
+        positions[idx] = x;
+        positions[idx + 1] = 0;
+        positions[idx + 2] = z;
+        idx += 3;
+      }
+    }
+
+    const triCount = segs * segs * 6;
+    const indices = new Uint16Array(triCount);
+    idx = 0;
+    for (let iz = 0; iz < segs; iz++) {
+      for (let ix = 0; ix < segs; ix++) {
+        const a = iz * (segs + 1) + ix;
+        const b = iz * (segs + 1) + ix + 1;
+        const c = (iz + 1) * (segs + 1) + ix;
+        const d = (iz + 1) * (segs + 1) + ix + 1;
+        indices[idx] = a; indices[idx + 1] = b; indices[idx + 2] = c;
+        indices[idx + 3] = b; indices[idx + 4] = d; indices[idx + 5] = c;
+        idx += 6;
+      }
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setIndex(new THREE.BufferAttribute(indices, 1));
+    geo.computeVertexNormals();
+    return geo;
   }
 
   update(delta) {
@@ -50,9 +86,7 @@ export class Water {
     if (this.mesh) {
       const segs = quality === 'ultra' || quality === 'high' ? 64 : quality === 'medium' ? 32 : 16;
       this.mesh.geometry.dispose();
-      const geo = new THREE.PlaneGeometry(this.size, this.size, segs, segs);
-      geo.rotateX(-Math.PI / 2);
-      this.mesh.geometry = geo;
+      this.mesh.geometry = this._buildWaterGeometry(segs);
     }
   }
 
