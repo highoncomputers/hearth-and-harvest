@@ -137,6 +137,10 @@ export class Player extends Entity {
     return def;
   }
 
+  hasToolEquipped(subtype) {
+    return this.equippedTool && getItemDef(this.equippedTool.id)?.subtype === subtype;
+  }
+
   hasBowEquipped() {
     return this.equippedWeapon && getItemDef(this.equippedWeapon.id)?.subtype === 'bow';
   }

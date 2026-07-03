@@ -40,6 +40,18 @@ export const ITEM_DEFS = {
   hide: { name: 'Animal Hide', type: 'material', subtype: 'hide', icon: '\u{1F9F4}', stackable: true, maxStack: 99, desc: 'Raw animal hide' },
   arrow: { name: 'Arrow', type: 'ammo', subtype: 'arrow', icon: '\u{27B3}', stackable: true, maxStack: 50, desc: 'Bow ammunition' },
 
+  // Farming & Fertilizer
+  manure: { name: 'Manure', type: 'material', subtype: 'fertilizer', icon: '\u{1F4A9}', stackable: true, maxStack: 30, desc: 'Rich animal manure', fertilizer: 0.5 },
+  compost: { name: 'Compost', type: 'material', subtype: 'fertilizer', icon: '\u{1F331}', stackable: true, maxStack: 30, desc: 'Decomposed plant matter', fertilizer: 0.8 },
+
+  // Seeds
+  wheat_seed: { name: 'Wheat Seeds', type: 'seed', subtype: 'wheat', icon: '\u{1F33E}', stackable: true, maxStack: 30, desc: 'Wheat seeds for planting' },
+  barley_seed: { name: 'Barley Seeds', type: 'seed', subtype: 'barley', icon: '\u{1F33E}', stackable: true, maxStack: 30, desc: 'Barley seeds for planting' },
+  cabbage_seed: { name: 'Cabbage Seeds', type: 'seed', subtype: 'cabbage', icon: '\u{1F96C}', stackable: true, maxStack: 30, desc: 'Cabbage seeds for planting' },
+  carrot_seed: { name: 'Carrot Seeds', type: 'seed', subtype: 'carrot', icon: '\u{1F955}', stackable: true, maxStack: 30, desc: 'Carrot seeds for planting' },
+  flax_seed: { name: 'Flax Seeds', type: 'seed', subtype: 'flax', icon: '\u{1F33F}', stackable: true, maxStack: 30, desc: 'Flax seeds for planting' },
+  onion_set: { name: 'Onion Sets', type: 'seed', subtype: 'onion', icon: '\u{1F9C5}', stackable: true, maxStack: 30, desc: 'Onion sets for planting' },
+
   // Armor
   leather_armor: { name: 'Leather Armor', type: 'armor', subtype: 'body', tier: 1, durability: 200, maxDurability: 200, icon: '\u{1F9E5}', stackable: false, desc: 'Tough leather tunic', defense: 15 },
   chain_armor: { name: 'Chainmail', type: 'armor', subtype: 'body', tier: 2, durability: 350, maxDurability: 350, icon: '\u{1F9E5}', stackable: false, desc: 'Interlocking iron rings', defense: 30 },

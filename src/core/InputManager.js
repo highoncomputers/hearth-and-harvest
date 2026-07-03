@@ -18,6 +18,7 @@ export class InputManager {
       interact: false, inventory: false,
       lockOn: false,
       ranged: false,
+      craft: false,
       pause: false,
     };
     this.prevActions = {};
@@ -111,7 +112,9 @@ export class InputManager {
       'KeyI': 'inventory',
       'KeyQ': 'dodge',
       'KeyR': 'ranged',
-      'KeyF': 'block',
+      'KeyC': 'craft',
+      'KeyB': 'block',
+      'KeyF': 'craft',
       'Escape': 'pause',
       'Tab': 'lockOn',
     };

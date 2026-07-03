@@ -31,6 +31,23 @@ Medieval life survival sim — third-person 3D browser game built with Three.js 
 ### Session 4 (July 3, 2026)
 - **Phase 3 completed**: Armor system + Bow combat
 - **Phase 4 completed**: 7-zone hub world with zone gates
+- Armor system, bow combat, ZoneManager, 7 zones, zone gates, terrain regeneration
+
+### Session 5 (July 3, 2026)
+- **Phase 5 completed**: 11/12 tasks — Farming, Cooking, Crafting
+- FarmingSystem: hoe tills ground → FarmPlot entity with 5 visual growth stages, watering (bucket), fertilization (manure/compost), seasonal growth rate modifiers, seed drops on harvest
+- FarmPlot: tilled soil mesh, planted crop, growth progress with water/soil/fert/season multipliers, 5 visual stages (seed→sprout→growing→mature→ready), auto-update
+- CraftingSystem: RECIPES dict with 20 recipes across 8 stations (campfire, hearth, workbench, anvil, sawmill, loom, kiln, still), canCraft/craft/repairItem functions, skill requirements
+- CraftingStation entity: 8 station types with unique 3D visuals (campfire with flames, anvil with horn, sawmill with blade, loom with frame, kiln with opening, still with copper pot + tube)
+- CraftingUI: panel listing available recipes per station, shows ingredients + skill req, grayed-out uncraftable items, repair section for anvil, closeable
+- Crafting station spawning: 8 stations placed around village zone at terrain height
+- Context-sensitive interact prompt: shows till/plant/harvest/water/fertilize based on player proximity and inventory
+- Inventory: added seeds (6 types), manure, compost, fertilizer stat on items
+- Save/load: farm plots serialized (position, crop, stage, progress, water, soil, fert)
+- Keyboard: C for crafting menu at stations, block moved to B
+- Remaining: food quality tiers (raw→cooked→seasoned stat bonuses)
+- **Phase 3 completed**: Armor system + Bow combat
+- **Phase 4 completed**: 7-zone hub world with zone gates
 - Armor system: leather/chain/plate armors with helm+boots slots, damage reduction formula (defense/(defense+50))
 - Bow combat: ArrowEntity with physics projectile, consumes arrows from inventory, hunting skill scaling
 - ZoneManager: per-zone terrain seeds, resource/enemy spawning, prop generation

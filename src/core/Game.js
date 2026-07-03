@@ -17,6 +17,10 @@ import { Boar } from '../entities/Boar.js';
 import { CombatSystem } from '../systems/Combat.js';
 import { ZoneManager } from '../systems/ZoneManager.js';
 import { ArrowEntity } from '../entities/ArrowEntity.js';
+import { FarmingSystem } from '../systems/FarmingSystem.js';
+import { CraftingStation } from '../entities/CraftingStation.js';
+import { CraftingUI } from '../ui/CraftingUI.js';
+import { RECIPES, getRecipesForStation, canCraft, craft, getRepairCost, repairItem, STATION_TYPES } from '../systems/Crafting.js';
 import { TouchControls } from '../controls/TouchControls.js';
 import { UIManager } from '../ui/UIManager.js';
 import { HUD } from '../ui/HUD.js';
@@ -59,7 +63,11 @@ export class Game {
     this.enemies = [];
     this.touchControls = null;
     this.zoneManager = null;
+    this.farming = null;
+    this.craftingStations = [];
+    this.craftingUI = null;
     this.arrows = [];
+    this.craftingPrompt = null;
     this.ui = null;
     this.hud = null;
     this.mainMenu = null;
@@ -114,6 +122,8 @@ export class Game {
     this.player.init();
     this.player.setPosition(0, 3, 0);
 
+    this.farming = new FarmingSystem(this.renderer.getScene(), this.physics, this.events);
+
     this.player.inventory.push(createItem('iron_sword'));
     this.player.inventory.push(createItem('wood_shield'));
     this.player.inventory.push(createItem('bow'));
@@ -123,6 +133,10 @@ export class Game {
     this.player.inventory.push(createItem('boots_leather'));
     this.player.inventory.push(createItem('bread', 3));
     this.player.inventory.push(createItem('berries', 10));
+    this.player.inventory.push(createItem('wood_hoe'));
+    this.player.inventory.push(createItem('wheat_seed', 5));
+    this.player.inventory.push(createItem('carrot_seed', 5));
+    this.player.inventory.push(createItem('manure', 3));
     this.player.equippedWeapon = this.player.inventory[0];
     this.player.equippedArmor = this.player.inventory[4];
     this.player.equippedHelm = this.player.inventory[5];
@@ -143,6 +157,9 @@ export class Game {
     this.inventoryUI = new InventoryUI(this.ui.container, this.events);
     this.inventoryUI.init();
 
+    this.craftingUI = new CraftingUI(this.ui.container, this.events);
+    this.craftingUI.init();
+
     this.loadingScreen = new LoadingScreen(this.ui.container);
     this.loadingScreen.init();
 
@@ -151,6 +168,7 @@ export class Game {
 
     this._createInteractPrompt();
     this.zoneManager._populateZone('village');
+    this._spawnCraftingStations();
     this._setupEvents();
     this._setupResizeHandler();
 
@@ -315,6 +333,7 @@ export class Game {
     if (this.input.getActionDown('interact')) {
       if (this.zoneManager.isAtAnyGate()) {
         this._handleGateTravel();
+      } else if (this._handleFarmingInteract()) {
       } else {
         this._handleInteract({ pos: this.player.mesh.position });
       }
@@ -324,6 +343,7 @@ export class Game {
     this.lockOnCooldown -= delta;
     if (this.input.getActionDown('pause')) {
       if (this.inventoryUI.isVisible()) this.inventoryUI.hide();
+      if (this.craftingUI.isVisible()) this.craftingUI.hide();
       this._togglePause();
       return;
     }
@@ -340,6 +360,8 @@ export class Game {
     this._updateEnemies(delta);
     this._updateArrows(delta);
     this._updateZoneGates(delta);
+    this._updateFarming(delta);
+    this._updateStations(delta);
 
     this.player.update(delta);
     this.physics.update(delta);
@@ -357,6 +379,43 @@ export class Game {
   _updatePickupPrompt() {
     if (!this.player) return;
     const pPos = this.player.mesh.position;
+
+    const nearStation = this.craftingStations.find(s => s.alive && s.isPlayerNear(pPos, 2.5));
+    if (nearStation) return;
+
+    const plotInfo = this.farming ? this.farming.getNearestPlotInfo(pPos) : null;
+
+    if (plotInfo && plotInfo.dist < 2) {
+      let msg = '[E] ';
+      if (plotInfo.canHarvest) {
+        msg += 'Harvest crop';
+      } else if (!plotInfo.cropPlanted) {
+        const hasSeeds = ['wheat_seed','barley_seed','cabbage_seed','carrot_seed','flax_seed','onion_set']
+          .some(s => getItemQuantity(this.player.inventory, s) > 0);
+        const hasFert = ['manure','compost'].some(f => getItemQuantity(this.player.inventory, f) > 0);
+        if (hasSeeds) msg += 'Plant seeds';
+        else if (hasFert) msg += 'Fertilize';
+        else msg += 'Water plot';
+      } else {
+        if (plotInfo.waterLevel < 3) msg += 'Water plot';
+        else if (!plotInfo.fertilized) msg += 'Fertilize';
+        else msg += 'Crop growing...';
+      }
+      this.interactPrompt.textContent = msg;
+      this.interactPrompt.style.opacity = '1';
+      return;
+    }
+
+    const tool = this.player.equippedTool;
+    if (tool && getItemDef(tool.id)?.subtype === 'hoe' && tool.durability > 0) {
+      const groundY = this.terrain.getHeightAt(pPos.x, pPos.z);
+      if (groundY >= 0.3) {
+        this.interactPrompt.textContent = '[E] Till soil (hoe)';
+        this.interactPrompt.style.opacity = '1';
+        return;
+      }
+    }
+
     let nearItem = null;
     let nearDist = 2.5;
     for (const item of this.itemEntities) {
@@ -430,6 +489,64 @@ export class Game {
     enemies.push(enemy);
   }
 
+  _spawnCraftingStations() {
+    const positions = [
+      { type: 'campfire', x: 5, z: 5 },
+      { type: 'workbench', x: -3, z: 6 },
+      { type: 'anvil', x: -5, z: 4 },
+      { type: 'hearth', x: 2, z: -4 },
+      { type: 'sawmill', x: -6, z: -3 },
+      { type: 'loom', x: 4, z: -6 },
+      { type: 'kiln', x: 7, z: -2 },
+      { type: 'still', x: -2, z: -6 },
+    ];
+    for (const p of positions) {
+      const y = this.terrain.getHeightAt(p.x, p.z);
+      if (y < 0.3) continue;
+      const station = new CraftingStation(this.renderer.getScene(), new THREE.Vector3(p.x, y, p.z), p.type);
+      station.init();
+      this.craftingStations.push(station);
+    }
+  }
+
+  _updateStations(delta) {
+    if (!this.player || !this.farming) return;
+    const pPos = this.player.mesh.position;
+    let nearStation = null;
+
+    for (const s of this.craftingStations) {
+      if (!s.alive) continue;
+      if (s.isPlayerNear(pPos, 2.5)) {
+        nearStation = s;
+        break;
+      }
+    }
+
+    if (nearStation && !this.craftingUI.isVisible()) {
+      const labels = { campfire:'Campfire (cook)', workbench:'Workbench (craft)', anvil:'Anvil (forge/repair)',
+        hearth:'Hearth (bake/brew)', sawmill:'Sawmill (process)', loom:'Loom (weave)',
+        kiln:'Kiln (fire)', still:'Still (brew)' };
+      this.interactPrompt.textContent = `[F] ${labels[nearStation.type] || nearStation.type}`;
+      this.interactPrompt.style.opacity = '1';
+    }
+
+    if (this.input && this.input.getActionDown('craft') && nearStation) {
+      if (this.craftingUI.isVisible()) {
+        this.craftingUI.hide();
+        this.resume();
+        this.touchControls.show();
+        this.hud.element.style.display = '';
+      } else {
+        this.craftingUI.show(nearStation.type, this.player.inventory, this.player.skills, () => {
+          this.events.emit('inventory:changed', this.player.inventory);
+        });
+        this.pause();
+        this.touchControls.hide();
+        this.hud.element.style.display = 'none';
+      }
+    }
+  }
+
   _onEnemyKilled(data) {
     this.combat.clearLockOn();
   }
@@ -471,6 +588,99 @@ export class Game {
     this.currentZone = data.zone;
   }
 
+  _updateFarming(delta) {
+    if (this.farming && this.sky) {
+      this.farming.update(delta, this.sky.season || 'spring');
+    }
+  }
+
+  _handleFarmingInteract() {
+    const pPos = this.player.mesh.position;
+    const plotInfo = this.farming.getNearestPlotInfo(pPos);
+
+    if (plotInfo && plotInfo.dist < 2) {
+      const inv = this.player.inventory;
+      if (plotInfo.canHarvest) {
+        const result = this.farming.harvestPlot(pPos, inv);
+        if (result.success) {
+          this.audio.playSFX('pickup', 0.5);
+          this.events.emit('inventory:changed', inv);
+          this.player.addSkillXp('farming', 15);
+          return true;
+        }
+      }
+      if (!plotInfo.cropPlanted) {
+        const seeds = ['wheat_seed', 'barley_seed', 'cabbage_seed', 'carrot_seed', 'flax_seed', 'onion_set'];
+        for (const seedId of seeds) {
+          if (getItemQuantity(inv, seedId) > 0) {
+            const result = this.farming.plantSeed(pPos, inv, seedId);
+            if (result.success) {
+              this.audio.playSFX('pickup', 0.3);
+              this.events.emit('inventory:changed', inv);
+              this.player.addSkillXp('farming', 5);
+              return true;
+            }
+          }
+        }
+        const ferts = ['manure', 'compost'];
+        for (const fertId of ferts) {
+          if (getItemQuantity(inv, fertId) > 0) {
+            const result = this.farming.fertilizePlot(pPos, inv, fertId);
+            if (result.success) {
+              this.audio.playSFX('pickup', 0.3);
+              this.events.emit('inventory:changed', inv);
+              return true;
+            }
+          }
+        }
+        const result = this.farming.waterPlot(pPos, inv);
+        if (result.success) {
+          this.audio.playSFX('pickup', 0.3);
+          this.events.emit('inventory:changed', inv);
+          return true;
+        }
+      } else {
+        if (plotInfo.waterLevel < 3) {
+          const result = this.farming.waterPlot(pPos, inv);
+          if (result.success) {
+            this.audio.playSFX('pickup', 0.3);
+            this.events.emit('inventory:changed', inv);
+            return true;
+          }
+        }
+        if (!plotInfo.fertilized) {
+          const ferts = ['manure', 'compost'];
+          for (const fertId of ferts) {
+            if (getItemQuantity(inv, fertId) > 0) {
+              const result = this.farming.fertilizePlot(pPos, inv, fertId);
+              if (result.success) {
+                this.audio.playSFX('pickup', 0.3);
+                this.events.emit('inventory:changed', inv);
+                return true;
+              }
+            }
+          }
+        }
+      }
+      return true;
+    }
+
+    const tool = this.player.equippedTool;
+    if (tool && getItemDef(tool.id)?.subtype === 'hoe' && tool.durability > 0) {
+      const groundY = this.terrain.getHeightAt(pPos.x, pPos.z);
+      if (groundY >= 0.3) {
+        const result = this.farming.tillGround(pPos, inv);
+        if (result.success) {
+          this.audio.playSFX('pickup', 0.4);
+          this.events.emit('inventory:changed', inv);
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   _handleInteract(data) {
     const pPos = data.pos || this.player.mesh.position;
     let nearItem = null;
@@ -493,7 +703,7 @@ export class Game {
   }
 
   _toggleInventory() {
-    if (this.pauseMenu.isVisible()) return;
+    if (this.pauseMenu.isVisible() || this.craftingUI.isVisible()) return;
     this.inventoryUI.toggle(this.player.inventory);
     if (this.inventoryUI.isVisible()) {
       this.pause();
@@ -556,6 +766,13 @@ export class Game {
           equippedWeapon: this.player.equippedWeapon,
           skills: this.player.skills, skillXp: this.player.skillXp,
         },
+        farming: this.farming ? {
+          plots: this.farming.plots.filter(p => p.alive).map(p => ({
+            x: p.position.x, y: p.position.y, z: p.position.z,
+            crop: p.crop, stage: p.growthStage, progress: p.growthProgress,
+            water: p.waterLevel, soil: p.soilQuality, fert: p.fertilized,
+          })),
+        } : { plots: [] },
         world: { zone: this.currentZone, time: this.sky.time, season: this.sky.season },
       };
     } catch (e) { return null; }
@@ -598,6 +815,9 @@ export class Game {
     if (this.physics) this.physics.dispose();
     if (this.combat) this.combat.dispose();
     if (this.zoneManager) this.zoneManager.dispose();
+    if (this.farming) this.farming.dispose();
+    if (this.craftingUI) this.craftingUI.dispose();
+    for (const s of this.craftingStations) s.dispose();
     if (this.touchControls) this.touchControls.dispose();
     if (this.hud) this.hud.dispose();
     if (this.mainMenu) this.mainMenu.dispose();

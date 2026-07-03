@@ -82,17 +82,17 @@
 
 ## Phase 5: Farming & Crafting (12 tasks)
 
-- [ ] Farming system — plow (hoe on grass → farm plot)
-- [ ] 6 crops (wheat, barley, cabbage, carrot, flax, onion)
-- [ ] Growth stages (5 stages, real-time progression)
-- [ ] Watering (bucket at river → pour on plot)
-- [ ] Seasonal farming (crop planting seasons, fallow fields)
-- [ ] Fertilizer (manure, compost, soil quality)
-- [ ] Cooking — campfire (roast, soup, bread, stew)
-- [ ] Hearth cooking (pies, seasoned meals, stat bonuses)
-- [ ] Crafting stations (workbench, anvil, sawmill, loom, kiln, still)
-- [ ] Tool repair and upgrade (anvil, material cost)
-- [ ] Recipe system (unlock via skill levels)
+- [x] Farming system — plow (hoe on grass → farm plot)
+- [x] 6 crops (wheat, barley, cabbage, carrot, flax, onion)
+- [x] Growth stages (5 stages, real-time progression)
+- [x] Watering (bucket at river → pour on plot)
+- [x] Seasonal farming (crop planting seasons, fallow fields)
+- [x] Fertilizer (manure, compost, soil quality)
+- [x] Cooking — campfire (roast, soup, bread, stew)
+- [x] Hearth cooking (pies, seasoned meals, stat bonuses)
+- [x] Crafting stations (workbench, anvil, sawmill, loom, kiln, still)
+- [x] Tool repair and upgrade (anvil, material cost)
+- [x] Recipe system (unlock via skill levels)
 - [ ] Food quality tiers (raw→cooked→seasoned)
 
 ## Phase 6: NPCs & Barter (10 tasks)
@@ -127,14 +127,14 @@
 
 ## Progress
 
-**Last updated:** Session 4
+**Last updated:** Session 5
 
 **Phase 1:** 15/15 tasks completed
 **Phase 2:** 9/12 tasks completed
 **Phase 3:** 14/14 tasks completed
 **Phase 4:** 12/14 tasks completed
-**Phase 5:** 0/12 tasks completed
+**Phase 5:** 11/12 tasks completed
 **Phase 6:** 0/10 tasks completed
 **Phase 7:** 0/12 tasks completed
 
-**Total:** 50/89 tasks completed
+**Total:** 61/89 tasks completed
