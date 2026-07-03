@@ -84,6 +84,17 @@ export class TouchControls {
       action: 'interact',
     });
 
+    this._createButton('bow', {
+      label: '\u{1F3F9}',
+      size: btnSize * 0.65,
+      fontSize: btnSize * 0.35,
+      bg: 'rgba(100,200,100,0.25)',
+      border: 'rgba(100,200,100,0.5)',
+      activeBg: 'rgba(100,200,100,0.5)',
+      position: { bottom: 'auto', top: btnSize * 0.5, right: btnSize * 1.5 },
+      action: 'ranged',
+    });
+
     this._setupTouchForwarding();
   }
 
@@ -152,6 +163,7 @@ export class TouchControls {
         else if (config.action === 'jump') inputManager.actions.jump = true;
         else if (config.action === 'interact') inputManager.actions.interact = true;
         else if (config.action === 'lockOn') inputManager.actions.lockOn = true;
+        else if (config.action === 'ranged') inputManager.actions.ranged = true;
       }
     }
   }
@@ -177,6 +189,7 @@ export class TouchControls {
     this.buttons[3].setPosition({ bottom: btnSize * 1.6 + 10, right: btnSize * 0.5 });
     this.buttons[4].setPosition({ bottom: 'auto', top: btnSize * 0.5, left: '50%' });
     this.buttons[5].setPosition({ bottom: 'auto', top: btnSize * 1.4, right: btnSize * 0.5 });
+    this.buttons[6].setPosition({ bottom: 'auto', top: btnSize * 0.5, right: btnSize * 1.5 });
   }
 
   dispose() {

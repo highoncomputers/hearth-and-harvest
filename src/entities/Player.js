@@ -42,6 +42,8 @@ export class Player extends Entity {
     this.equippedTool = null;
     this.equippedWeapon = null;
     this.equippedArmor = null;
+    this.equippedHelm = null;
+    this.equippedBoots = null;
 
     this.currentZone = 'village';
     this.skills = {
@@ -108,6 +110,35 @@ export class Player extends Entity {
 
   equipWeapon(weapon) {
     this.equippedWeapon = weapon;
+  }
+
+  equipArmor(item) {
+    const def = getItemDef(item?.id);
+    if (!def || def.type !== 'armor') return;
+    const subtype = def.subtype;
+    if (subtype === 'body') {
+      this.equippedArmor = item;
+    } else if (subtype === 'head') {
+      this.equippedHelm = item;
+    } else if (subtype === 'feet') {
+      this.equippedBoots = item;
+    }
+  }
+
+  getTotalDefense() {
+    let def = 0;
+    const defs = [this.equippedArmor, this.equippedHelm, this.equippedBoots];
+    for (const item of defs) {
+      if (item) {
+        const d = getItemDef(item.id);
+        if (d && d.defense) def += d.defense;
+      }
+    }
+    return def;
+  }
+
+  hasBowEquipped() {
+    return this.equippedWeapon && getItemDef(this.equippedWeapon.id)?.subtype === 'bow';
   }
 
   addItem(item) {
@@ -440,6 +471,41 @@ export class Player extends Entity {
     this._performAttackHit(dmg);
   }
 
+  bowAttack() {
+    if (this.attacking || this.dodging || !this.hasBowEquipped()) return;
+    if (this.stamina < 15) return;
+    if (!this.inventory.some(i => i && i.id === 'arrow' && i.quantity > 0)) return;
+
+    this.attacking = true;
+    this.attackType = 'ranged';
+    this.stamina -= 15;
+
+    for (let i = 0; i < this.inventory.length; i++) {
+      if (this.inventory[i] && this.inventory[i].id === 'arrow') {
+        this.inventory[i].quantity--;
+        if (this.inventory[i].quantity <= 0) this.inventory.splice(i, 1);
+        break;
+      }
+    }
+
+    const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(this.mesh.quaternion);
+    let dmg = CONFIG.COMBAT.LIGHT_ATTACK_DAMAGE * 0.8;
+    if (this.equippedWeapon) {
+      const def = getItemDef(this.equippedWeapon.id);
+      if (def && def.damage) dmg += def.damage;
+    }
+    dmg *= (1 + this.skills.hunting * 0.05);
+
+    this.events.emit('player:rangedAttack', {
+      origin: this.mesh.position,
+      direction,
+      damage: Math.floor(dmg),
+    });
+    if (this.audio) this.audio.playSFX('bow_shoot', 0.6);
+
+    setTimeout(() => { this.attacking = false; }, 400);
+  }
+
   takeDamage(amount, source) {
     if (this.iFrames > 0) return;
     if (this.blocking) {
@@ -452,6 +518,9 @@ export class Player extends Entity {
       }
       return;
     }
+    const defense = this.getTotalDefense();
+    const reduction = defense / (defense + 50);
+    amount *= (1 - reduction);
     super.takeDamage(amount, source);
     this.iFrames = 0.3;
     this.events.emit('player:hurt', { amount, health: this.health });

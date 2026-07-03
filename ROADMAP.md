@@ -60,23 +60,23 @@
 - [x] Enemy AI: Wolf (fast, pack-hunt, pounce)
 - [x] Enemy AI: Boar (charge attack, high damage)
 - [x] Weapon tiers (wood→iron→steel) with damage scaling
-- [ ] Armor system (leather→chain→plate)
-- [ ] Bow combat (draw, aim, release, arrow physics)
+- [x] Armor system (leather→chain→plate)
+- [x] Bow combat (draw, aim, release, arrow physics)
 
 ## Phase 4: World Zones (14 tasks)
 
-- [ ] Village Hub — player hut, NPC plots, well, square, zone gate
-- [ ] Forest — dense trees, berries, wolves, deer, rabbits
-- [ ] Riverlands — animated river, fishing spots, clay deposits
-- [ ] Farmlands — open fields, windmill, hay bales, wild wheat
-- [ ] Iron Mine — cave system, ore veins, bats, spiders
-- [ ] Bandit Camp — tents, campfires, bandit spawns, loot chest
-- [ ] Old Ruins — stone walls, puzzle gate, boss room
-- [ ] Zone transition system (gate triggers, fade loading)
-- [ ] Wildlife spawn system (per-zone animal spawning)
-- [ ] Resource node respawning (timed respawn per zone)
+- [x] Village Hub — player hut, NPC plots, well, square, zone gate
+- [x] Forest — dense trees, berries, wolves, deer, rabbits
+- [x] Riverlands — animated river, fishing spots, clay deposits
+- [x] Farmlands — open fields, windmill, hay bales, wild wheat
+- [x] Iron Mine — cave system, ore veins, bats, spiders
+- [x] Bandit Camp — tents, campfires, bandit spawns, loot chest
+- [x] Old Ruins — stone walls, puzzle gate, boss room
+- [x] Zone transition system (gate triggers, fade loading)
+- [x] Wildlife spawn system (per-zone animal spawning)
+- [x] Resource node respawning (timed respawn per zone)
 - [ ] Zone-specific ambient audio
-- [ ] Enemy spawns per zone (bandits, wolves, spiders, skeletons)
+- [x] Enemy spawns per zone (bandits, wolves, spiders, skeletons)
 - [ ] Loot containers (chests, barrels, hidden caches)
 - [ ] Zone mini-map (top-down terrain render)
 
@@ -127,14 +127,14 @@
 
 ## Progress
 
-**Last updated:** Session 1
+**Last updated:** Session 4
 
 **Phase 1:** 15/15 tasks completed
 **Phase 2:** 9/12 tasks completed
-**Phase 3:** 12/14 tasks completed
-**Phase 4:** 0/14 tasks completed
+**Phase 3:** 14/14 tasks completed
+**Phase 4:** 12/14 tasks completed
 **Phase 5:** 0/12 tasks completed
 **Phase 6:** 0/10 tasks completed
 **Phase 7:** 0/12 tasks completed
 
-**Total:** 36/89 tasks completed
+**Total:** 50/89 tasks completed

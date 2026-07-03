@@ -28,11 +28,10 @@ export const ITEM_DEFS = {
 
   // Crops
   wheat: { name: 'Wheat', type: 'crop', subtype: 'grain', icon: '\u{1F33E}', stackable: true, maxStack: 99, desc: 'Harvested wheat' },
-  barley: { name: 'Barley', type: 'crop', subtype: 'grain', icon: '\u{1F33E}', stackable: true, maxStack: 99, desc: 'Harvested barley' },
+  barley: { name: 'Barley', type: 'crop', subtype: 'grain', icon: '\u{1F33E}', stackable: true, maxStack: 99, desc: 'Harvested barley stalks' },
   cabbage: { name: 'Cabbage', type: 'crop', subtype: 'vegetable', icon: '\u{1F96C}', stackable: true, maxStack: 99, desc: 'Fresh cabbage' },
   carrot: { name: 'Carrot', type: 'crop', subtype: 'vegetable', icon: '\u{1F955}', stackable: true, maxStack: 99, desc: 'Fresh carrot' },
   onion: { name: 'Onion', type: 'crop', subtype: 'vegetable', icon: '\u{1F9C5}', stackable: true, maxStack: 99, desc: 'Fresh onion' },
-  barley: { name: 'Barley', type: 'crop', subtype: 'grain', icon: '\u{1F33E}', stackable: true, maxStack: 99, desc: 'Harvested barley stalks' },
   flax_harvested: { name: 'Flax Fibers', type: 'crop', subtype: 'fiber', icon: '\u{1F33F}', stackable: true, maxStack: 99, desc: 'Processed flax fibers' },
 
   // Valuables
@@ -40,6 +39,15 @@ export const ITEM_DEFS = {
   bone: { name: 'Bone', type: 'material', subtype: 'bone', icon: '\u{1F9B4}', stackable: true, maxStack: 99, desc: 'Animal bone for crafting' },
   hide: { name: 'Animal Hide', type: 'material', subtype: 'hide', icon: '\u{1F9F4}', stackable: true, maxStack: 99, desc: 'Raw animal hide' },
   arrow: { name: 'Arrow', type: 'ammo', subtype: 'arrow', icon: '\u{27B3}', stackable: true, maxStack: 50, desc: 'Bow ammunition' },
+
+  // Armor
+  leather_armor: { name: 'Leather Armor', type: 'armor', subtype: 'body', tier: 1, durability: 200, maxDurability: 200, icon: '\u{1F9E5}', stackable: false, desc: 'Tough leather tunic', defense: 15 },
+  chain_armor: { name: 'Chainmail', type: 'armor', subtype: 'body', tier: 2, durability: 350, maxDurability: 350, icon: '\u{1F9E5}', stackable: false, desc: 'Interlocking iron rings', defense: 30 },
+  plate_armor: { name: 'Plate Armor', type: 'armor', subtype: 'body', tier: 3, durability: 500, maxDurability: 500, icon: '\u{1F9E5}', stackable: false, desc: 'Full steel plate', defense: 50 },
+  helm_leather: { name: 'Leather Cap', type: 'armor', subtype: 'head', tier: 1, durability: 100, maxDurability: 100, icon: '\u{1F3A9}', stackable: false, desc: 'Simple leather cap', defense: 5 },
+  helm_iron: { name: 'Iron Helm', type: 'armor', subtype: 'head', tier: 2, durability: 200, maxDurability: 200, icon: '\u{1F3A9}', stackable: false, desc: 'Iron skullcap', defense: 12 },
+  boots_leather: { name: 'Leather Boots', type: 'armor', subtype: 'feet', tier: 1, durability: 120, maxDurability: 120, icon: '\u{1F97E}', stackable: false, desc: 'Sturdy leather boots', defense: 5 },
+  boots_iron: { name: 'Iron Boots', type: 'armor', subtype: 'feet', tier: 2, durability: 250, maxDurability: 250, icon: '\u{1F97E}', stackable: false, desc: 'Reinforced iron boots', defense: 10 },
 };
 
 export const STORAGE_KEY = 'inventory';

@@ -33,6 +33,7 @@ export class AudioManager {
     this.buffers.set('whoosh', this._createWhooshBuffer());
     this.buffers.set('hit', this._createHitBuffer());
     this.buffers.set('sword_swing', this._createSwordSwingBuffer());
+    this.buffers.set('bow_shoot', this._createBowShootBuffer());
     this.buffers.set('block', this._createBlockBuffer());
     this.buffers.set('footstep', this._createFootstepBuffer());
     this.buffers.set('pickup', this._createPickupBuffer());
@@ -86,6 +87,17 @@ export class AudioManager {
         const sweep = 200 + t * 2000;
         data[i] = Math.sin(2 * Math.PI * sweep * t) * Math.exp(-t * 10) * 0.2 +
           (Math.random() * 2 - 1) * Math.exp(-t * 12) * 0.15;
+      }
+    });
+  }
+
+  _createBowShootBuffer() {
+    return this._createBuffer(0.4, (data) => {
+      for (let i = 0; i < data.length; i++) {
+        const t = i / this.ctx.sampleRate;
+        const twang = Math.sin(2 * Math.PI * (300 + t * 800) * t) * Math.exp(-t * 12) * 0.4;
+        const air = (Math.random() * 2 - 1) * Math.exp(-t * 8) * 0.15;
+        data[i] = twang + air;
       }
     });
   }

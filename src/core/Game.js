@@ -10,12 +10,13 @@ import { SkyCycle } from '../graphics/SkyCycle.js';
 import { Water } from '../graphics/Water.js';
 import { Physics } from '../physics/Physics.js';
 import { Player } from '../entities/Player.js';
-import { ResourceNode } from '../entities/ResourceNode.js';
 import { ItemEntity } from '../entities/ItemEntity.js';
 import { Bandit } from '../entities/Bandit.js';
 import { Wolf } from '../entities/Wolf.js';
 import { Boar } from '../entities/Boar.js';
 import { CombatSystem } from '../systems/Combat.js';
+import { ZoneManager } from '../systems/ZoneManager.js';
+import { ArrowEntity } from '../entities/ArrowEntity.js';
 import { TouchControls } from '../controls/TouchControls.js';
 import { UIManager } from '../ui/UIManager.js';
 import { HUD } from '../ui/HUD.js';
@@ -57,6 +58,8 @@ export class Game {
     this.itemEntities = [];
     this.enemies = [];
     this.touchControls = null;
+    this.zoneManager = null;
+    this.arrows = [];
     this.ui = null;
     this.hud = null;
     this.mainMenu = null;
@@ -105,6 +108,8 @@ export class Game {
 
     this.combat = new CombatSystem(this.events, this.cameraCtrl, this.audio);
 
+    this.zoneManager = new ZoneManager(this.renderer.getScene(), this.physics, this.events, this.terrain);
+
     this.player = new Player(this.renderer.getScene(), this.physics, this.cameraCtrl, this.events, this.audio);
     this.player.init();
     this.player.setPosition(0, 3, 0);
@@ -113,9 +118,15 @@ export class Game {
     this.player.inventory.push(createItem('wood_shield'));
     this.player.inventory.push(createItem('bow'));
     this.player.inventory.push(createItem('arrow', 20));
+    this.player.inventory.push(createItem('leather_armor'));
+    this.player.inventory.push(createItem('helm_iron'));
+    this.player.inventory.push(createItem('boots_leather'));
     this.player.inventory.push(createItem('bread', 3));
     this.player.inventory.push(createItem('berries', 10));
     this.player.equippedWeapon = this.player.inventory[0];
+    this.player.equippedArmor = this.player.inventory[4];
+    this.player.equippedHelm = this.player.inventory[5];
+    this.player.equippedBoots = this.player.inventory[6];
 
     this.ui = new UIManager(this.events);
     this.ui.init();
@@ -139,8 +150,7 @@ export class Game {
     this.touchControls.init();
 
     this._createInteractPrompt();
-    this._spawnResources();
-    this._spawnEnemies();
+    this.zoneManager._populateZone('village');
     this._setupEvents();
     this._setupResizeHandler();
 
@@ -183,53 +193,8 @@ export class Game {
     this.events.on('world:dropItem', (data) => this._spawnItemEntity(data.itemId, data.quantity, data.position));
     this.events.on('player:skillXp', (data) => this.player.addSkillXp(data.skill, data.amount));
     this.events.on('enemy:killed', (data) => this._onEnemyKilled(data));
-  }
-
-  _spawnResources() {
-    const types = ['tree', 'tree', 'tree', 'rock', 'rock', 'bush', 'bush', 'clay', 'flax', 'iron_ore'];
-    for (let i = 0; i < 40; i++) {
-      const type = types[Math.floor(Math.random() * types.length)];
-      const x = (Math.random() - 0.5) * 40;
-      const z = (Math.random() - 0.5) * 40;
-      const y = this.terrain.getHeightAt(x, z);
-      if (y < 0.5 || y > 6) continue;
-      const res = new ResourceNode(this.renderer.getScene(), this.physics, type, new THREE.Vector3(x, y, z));
-      res.init();
-      this.resources.push(res);
-    }
-  }
-
-  _spawnEnemies() {
-    for (let i = 0; i < 5; i++) {
-      const x = (Math.random() - 0.5) * 50;
-      const z = (Math.random() - 0.5) * 50;
-      const y = this.terrain.getHeightAt(x, z);
-      if (y < 0.5 || y > 6) continue;
-      const bandit = new Bandit(this.renderer.getScene(), this.physics, this.events, 1 + Math.floor(Math.random() * 2));
-      bandit.setPosition(x, y, z);
-      bandit.init();
-      this.enemies.push(bandit);
-    }
-    for (let i = 0; i < 4; i++) {
-      const x = (Math.random() - 0.5) * 50;
-      const z = (Math.random() - 0.5) * 50;
-      const y = this.terrain.getHeightAt(x, z);
-      if (y < 0.5 || y > 6) continue;
-      const wolf = new Wolf(this.renderer.getScene(), this.physics, this.events);
-      wolf.setPosition(x, y, z);
-      wolf.init();
-      this.enemies.push(wolf);
-    }
-    for (let i = 0; i < 2; i++) {
-      const x = (Math.random() - 0.5) * 50;
-      const z = (Math.random() - 0.5) * 50;
-      const y = this.terrain.getHeightAt(x, z);
-      if (y < 0.5 || y > 6) continue;
-      const boar = new Boar(this.renderer.getScene(), this.physics, this.events);
-      boar.setPosition(x, y, z);
-      boar.init();
-      this.enemies.push(boar);
-    }
+    this.events.on('player:rangedAttack', (data) => this._spawnArrow(data));
+    this.events.on('zone:changed', (data) => this._onZoneChanged(data));
   }
 
   _spawnItemEntity(itemId, quantity, position) {
@@ -344,7 +309,16 @@ export class Game {
     else this.player.block(false);
     if (this.input.getActionDown('dodge')) this.player.dodge();
 
-    if (this.input.getActionDown('interact')) this._handleInteract({ pos: this.player.mesh.position });
+    if (this.input.getActionDown('ranged')) {
+      this.player.bowAttack();
+    }
+    if (this.input.getActionDown('interact')) {
+      if (this.zoneManager.isAtAnyGate()) {
+        this._handleGateTravel();
+      } else {
+        this._handleInteract({ pos: this.player.mesh.position });
+      }
+    }
     if (this.input.getActionDown('inventory')) this._toggleInventory();
 
     this.lockOnCooldown -= delta;
@@ -364,6 +338,8 @@ export class Game {
     this._updateResources(delta);
     this._updateItemEntities(delta);
     this._updateEnemies(delta);
+    this._updateArrows(delta);
+    this._updateZoneGates(delta);
 
     this.player.update(delta);
     this.physics.update(delta);
@@ -397,7 +373,10 @@ export class Game {
     }
   }
 
-  _updateResources(delta) { for (const r of this.resources) r.update(delta); }
+  _updateResources(delta) {
+    const resources = this.zoneManager ? this.zoneManager.resources : this.resources;
+    for (const r of resources) r.update(delta);
+  }
 
   _updateItemEntities(delta) {
     for (let i = this.itemEntities.length - 1; i >= 0; i--) {
@@ -408,31 +387,35 @@ export class Game {
   }
 
   _updateEnemies(delta) {
+    const enemies = this.zoneManager ? this.zoneManager.enemies : this.enemies;
     const pPos = this.player.mesh.position;
-    for (let i = this.enemies.length - 1; i >= 0; i--) {
-      const e = this.enemies[i];
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i];
       if (!e.alive) {
         if (e.state === 'dead' && e.respawnTimer !== undefined) {
           e.respawnTimer -= delta;
           if (e.respawnTimer <= 0) {
             e.dispose();
-            this.enemies.splice(i, 1);
+            enemies.splice(i, 1);
           }
         } else if (e.state === 'dead') {
           setTimeout(() => { e.dispose(); }, 2000);
-          this.enemies.splice(i, 1);
+          enemies.splice(i, 1);
         }
         continue;
       }
       e.update(delta, pPos);
     }
-    if (this.enemies.length < 5 && Math.random() < 0.001) {
+    this.enemies = enemies;
+    if (enemies.length < 3 && Math.random() < 0.001) {
       this._respawnEnemy();
     }
   }
 
   _respawnEnemy() {
-    const types = ['bandit', 'bandit', 'wolf', 'boar'];
+    const enemies = this.zoneManager ? this.zoneManager.enemies : this.enemies;
+    const spawns = this.zoneManager ? this.zoneManager.getZoneSpawns(this.zoneManager.currentZoneId) : { enemies: ['bandit', 'wolf', 'boar'] };
+    const types = spawns.enemies.length > 0 ? spawns.enemies : ['bandit', 'wolf', 'boar'];
     const type = types[Math.floor(Math.random() * types.length)];
     const x = (Math.random() - 0.5) * 50;
     const z = (Math.random() - 0.5) * 50;
@@ -444,11 +427,48 @@ export class Game {
     else enemy = new Boar(this.renderer.getScene(), this.physics, this.events);
     enemy.setPosition(x, y, z);
     enemy.init();
-    this.enemies.push(enemy);
+    enemies.push(enemy);
   }
 
   _onEnemyKilled(data) {
     this.combat.clearLockOn();
+  }
+
+  _spawnArrow(data) {
+    const arrow = new ArrowEntity(
+      this.renderer.getScene(), this.physics,
+      data.origin, data.direction, data.damage,
+      { enemies: this.zoneManager.getEnemies(), events: this.events }
+    );
+    arrow.init();
+    this.arrows.push(arrow);
+  }
+
+  _updateArrows(delta) {
+    for (let i = this.arrows.length - 1; i >= 0; i--) {
+      const a = this.arrows[i];
+      a.update(delta);
+      if (!a.alive) {
+        a.dispose();
+        this.arrows.splice(i, 1);
+      }
+    }
+  }
+
+  _updateZoneGates(delta) {
+    if (this.zoneManager && this.player) {
+      this.zoneManager.updateGates(this.player.mesh.position, this.loadingScreen);
+    }
+  }
+
+  _handleGateTravel() {
+    this.zoneManager.activatePendingGate(this.loadingScreen, (dest) => {
+      this.player.setPosition(dest.x, dest.y, dest.z);
+    });
+  }
+
+  _onZoneChanged(data) {
+    this.currentZone = data.zone;
   }
 
   _handleInteract(data) {
@@ -570,12 +590,14 @@ export class Game {
     for (const r of this.resources) r.dispose();
     for (const i of this.itemEntities) i.dispose();
     for (const e of this.enemies) e.dispose();
+    for (const a of this.arrows) a.dispose();
     if (this.player) this.player.dispose();
     if (this.terrain) this.terrain.dispose();
     if (this.sky) this.sky.dispose();
     if (this.water) this.water.dispose();
     if (this.physics) this.physics.dispose();
     if (this.combat) this.combat.dispose();
+    if (this.zoneManager) this.zoneManager.dispose();
     if (this.touchControls) this.touchControls.dispose();
     if (this.hud) this.hud.dispose();
     if (this.mainMenu) this.mainMenu.dispose();

@@ -17,6 +17,7 @@ export class InputManager {
       jump: false, sprint: false,
       interact: false, inventory: false,
       lockOn: false,
+      ranged: false,
       pause: false,
     };
     this.prevActions = {};
@@ -109,9 +110,10 @@ export class InputManager {
       'KeyE': 'interact',
       'KeyI': 'inventory',
       'KeyQ': 'dodge',
+      'KeyR': 'ranged',
       'KeyF': 'block',
       'Escape': 'pause',
-      'Tab': 'inventory',
+      'Tab': 'lockOn',
     };
     const action = map[code];
     if (action) {
