@@ -76,7 +76,7 @@ export class ArrowEntity {
 
   _checkCollisions() {
     const arrowPos = this.mesh.position;
-    const enemies = this.source?.enemies || [];
+    const enemies = this.source?.getEnemies ? this.source.getEnemies() : this.source?.enemies || [];
     for (const enemy of enemies) {
       if (!enemy.alive) continue;
       const dist = enemy.mesh.position.distanceTo(arrowPos);

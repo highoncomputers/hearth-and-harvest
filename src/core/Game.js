@@ -582,7 +582,7 @@ export class Game {
       const labels = { campfire:'Campfire (cook)', workbench:'Workbench (craft)', anvil:'Anvil (forge/repair)',
         hearth:'Hearth (bake/brew)', sawmill:'Sawmill (process)', loom:'Loom (weave)',
         kiln:'Kiln (fire)', still:'Still (brew)' };
-      this.interactPrompt.textContent = `[F] ${labels[nearStation.type] || nearStation.type}`;
+      this.interactPrompt.textContent = `[C] ${labels[nearStation.type] || nearStation.type}`;
       this.interactPrompt.style.opacity = '1';
     }
 
@@ -688,7 +688,7 @@ export class Game {
     const arrow = new ArrowEntity(
       this.renderer.getScene(), this.physics,
       data.origin, data.direction, data.damage,
-      { enemies: this.zoneManager.getEnemies(), events: this.events }
+      { getEnemies: () => this.zoneManager.getEnemies(), events: this.events }
     );
     arrow.init();
     this.arrows.push(arrow);

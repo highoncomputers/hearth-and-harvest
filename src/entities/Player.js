@@ -277,38 +277,6 @@ export class Player extends Entity {
     }
   }
 
-  lightAttack() {
-    if (this.attacking || this.dodging) return;
-    if (this.stamina < CONFIG.COMBAT.LIGHT_STAMINA_COST) return;
-
-    this.attacking = true;
-    this.attackType = 'light';
-    this.stamina -= CONFIG.COMBAT.LIGHT_STAMINA_COST;
-    this.comboCount++;
-    this.comboTimer = CONFIG.COMBAT.COMBO_WINDOW;
-
-    this.events.emit('player:attack', { type: 'light', combo: this.comboCount });
-
-    setTimeout(() => { this.attacking = false; }, 300);
-
-    this._performAttackHit(CONFIG.COMBAT.LIGHT_ATTACK_DAMAGE);
-  }
-
-  heavyAttack() {
-    if (this.attacking || this.dodging) return;
-    if (this.stamina < CONFIG.COMBAT.HEAVY_STAMINA_COST) return;
-
-    this.attacking = true;
-    this.attackType = 'heavy';
-    this.stamina -= CONFIG.COMBAT.HEAVY_STAMINA_COST;
-
-    this.events.emit('player:attack', { type: 'heavy', combo: this.comboCount });
-
-    setTimeout(() => { this.attacking = false; }, 600);
-
-    this._performAttackHit(CONFIG.COMBAT.HEAVY_ATTACK_DAMAGE);
-  }
-
   _performAttackHit(damage) {
     this.events.emit('combat:hitCheck', {
       origin: this.mesh.position,
@@ -491,6 +459,7 @@ export class Player extends Entity {
         break;
       }
     }
+    this.events.emit('inventory:changed', this.inventory);
 
     const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(this.mesh.quaternion);
     let dmg = CONFIG.COMBAT.LIGHT_ATTACK_DAMAGE * 0.8;

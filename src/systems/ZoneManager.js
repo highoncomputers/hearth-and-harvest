@@ -110,7 +110,7 @@ export class ZoneManager {
     }, 150);
 
     setTimeout(() => {
-      this.terrain.seed = Math.random() * 1000 + (CONFIG.ZONES[zoneId.toUpperCase()]?.color || 0);
+      this.terrain.seed = Math.random() * 1000 + (zone.color || 0);
       this.terrain.generate();
       loadingScreen.setProgress(0.5);
       loadingScreen.setMessage('Placing resources...');

@@ -114,7 +114,6 @@ export class InputManager {
       'KeyR': 'ranged',
       'KeyC': 'craft',
       'KeyB': 'block',
-      'KeyF': 'craft',
       'Escape': 'pause',
       'Tab': 'lockOn',
     };

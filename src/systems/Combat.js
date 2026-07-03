@@ -79,8 +79,6 @@ export class CombatSystem {
     if (source.entityType === 'player') {
       const weapon = source.equippedWeapon;
       if (weapon) {
-        const def = getItemDef(weapon.id);
-        if (def && def.damage) finalDamage += def.damage;
         const broke = reduceDurability(weapon, 1);
         if (broke) {
           source.equippedWeapon = null;

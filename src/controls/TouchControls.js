@@ -116,12 +116,6 @@ export class TouchControls {
           this.events.emit('joystick:start', {
             id: touch.identifier, x: touch.clientX, y: touch.clientY, action: 'joystick',
           });
-        } else if (el && el.closest && el.closest('[data-action]')) {
-          const actionEl = el.closest('[data-action]');
-          const action = actionEl.dataset.action;
-          this.events.emit('action:start', {
-            id: touch.identifier, action, actionType: action,
-          });
         }
 
         for (const { id, button, config } of this.buttons) {
