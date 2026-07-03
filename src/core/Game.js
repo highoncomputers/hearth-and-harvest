@@ -103,118 +103,175 @@ export class Game {
   }
 
   async init() {
-    const deviceInfo = detectDeviceCapability();
-    const savedSettings = new SaveManager().loadSettings();
+    try {
+      var deviceInfo = detectDeviceCapability();
+    } catch (e) { throw new Error('[device detection] ' + e.message); }
+    try {
+      var savedSettings = new SaveManager().loadSettings();
+    } catch (e) { throw new Error('[settings load] ' + e.message); }
     let qualityTier = deviceInfo.tier;
     if (savedSettings?.qualityTier) qualityTier = savedSettings.qualityTier;
     setQualityTier(qualityTier);
 
-    this.renderer = new Renderer();
-    this.renderer.init(qualityTier);
-    this.cameraCtrl = new Camera(this.renderer.getCamera());
+    try {
+      this.renderer = new Renderer();
+      this.renderer.init(qualityTier);
+      this.cameraCtrl = new Camera(this.renderer.getCamera());
+    } catch (e) { throw new Error('[renderer/camera] ' + e.message); }
 
-    this.physics = new Physics();
-    this.physics.init(CONFIG.WORLD.GRAVITY);
-    this.physics.createGround(0);
+    try {
+      this.physics = new Physics();
+      this.physics.init(CONFIG.WORLD.GRAVITY);
+      this.physics.createGround(0);
+    } catch (e) { throw new Error('[physics] ' + e.message); }
 
-    this.input = new InputManager(this.events);
-    this.audio = new AudioManager();
-    await this.audio.init();
-    this.save = new SaveManager();
-    this.scenes = new SceneManager();
-    this.scenes.init(this.renderer.getRenderer());
+    try {
+      this.input = new InputManager(this.events);
+      this.audio = new AudioManager();
+      await this.audio.init();
+    } catch (e) { throw new Error('[audio] ' + e.message); }
 
-    this.sky = new SkyCycle(this.renderer.getScene());
-    this.sky.init();
-    this.water = new Water(this.renderer.getScene(), qualityTier);
-    this.water.init();
+    try {
+      this.save = new SaveManager();
+      this.scenes = new SceneManager();
+      this.scenes.init(this.renderer.getRenderer());
+    } catch (e) { throw new Error('[scene manager] ' + e.message); }
 
-    this.terrain = new Terrain(this.renderer.getScene(), qualityTier);
-    this.terrain.generate();
+    try {
+      this.sky = new SkyCycle(this.renderer.getScene());
+      this.sky.init();
+      this.water = new Water(this.renderer.getScene(), qualityTier);
+      this.water.init();
+    } catch (e) { throw new Error('[sky/water] ' + e.message); }
 
-    this.combat = new CombatSystem(this.events, this.cameraCtrl, this.audio);
+    try {
+      this.terrain = new Terrain(this.renderer.getScene(), qualityTier);
+      this.terrain.generate();
+    } catch (e) { throw new Error('[terrain] ' + e.message); }
 
-    this.zoneManager = new ZoneManager(this.renderer.getScene(), this.physics, this.events, this.terrain);
+    try {
+      this.combat = new CombatSystem(this.events, this.cameraCtrl, this.audio);
+    } catch (e) { throw new Error('[combat system] ' + e.message); }
 
-    this.player = new Player(this.renderer.getScene(), this.physics, this.cameraCtrl, this.events, this.audio);
-    this.player.init();
-    this.player.setPosition(0, 3, 0);
+    try {
+      this.zoneManager = new ZoneManager(this.renderer.getScene(), this.physics, this.events, this.terrain);
+    } catch (e) { throw new Error('[zone manager] ' + e.message); }
 
-    this.farming = new FarmingSystem(this.renderer.getScene(), this.physics, this.events);
+    try {
+      this.player = new Player(this.renderer.getScene(), this.physics, this.cameraCtrl, this.events, this.audio);
+      this.player.init();
+      this.player.setPosition(0, 3, 0);
+    } catch (e) { throw new Error('[player init] ' + e.message); }
 
-    this.player.inventory.push(createItem('iron_sword'));
-    this.player.inventory.push(createItem('wood_shield'));
-    this.player.inventory.push(createItem('bow'));
-    this.player.inventory.push(createItem('arrow', 20));
-    this.player.inventory.push(createItem('leather_armor'));
-    this.player.inventory.push(createItem('helm_iron'));
-    this.player.inventory.push(createItem('boots_leather'));
-    this.player.inventory.push(createItem('bread', 3));
-    this.player.inventory.push(createItem('berries', 10));
-    this.player.inventory.push(createItem('wood_hoe'));
-    this.player.inventory.push(createItem('wheat_seed', 5));
-    this.player.inventory.push(createItem('carrot_seed', 5));
-    this.player.inventory.push(createItem('manure', 3));
-    this.player.equippedWeapon = this.player.inventory[0];
-    this.player.equippedArmor = this.player.inventory[4];
-    this.player.equippedHelm = this.player.inventory[5];
-    this.player.equippedBoots = this.player.inventory[6];
+    try {
+      this.farming = new FarmingSystem(this.renderer.getScene(), this.physics, this.events);
+    } catch (e) { throw new Error('[farming] ' + e.message); }
 
-    this.ui = new UIManager(this.events);
-    this.ui.init();
+    try {
+      const inv = this.player.inventory;
+      inv.push(createItem('iron_sword'));
+      inv.push(createItem('wood_shield'));
+      inv.push(createItem('bow'));
+      inv.push(createItem('arrow', 20));
+      inv.push(createItem('leather_armor'));
+      inv.push(createItem('helm_iron'));
+      inv.push(createItem('boots_leather'));
+      inv.push(createItem('bread', 3));
+      inv.push(createItem('berries', 10));
+      inv.push(createItem('wood_hoe'));
+      inv.push(createItem('wheat_seed', 5));
+      inv.push(createItem('carrot_seed', 5));
+      inv.push(createItem('manure', 3));
+      this.player.equippedWeapon = inv.length > 0 ? inv[0] : null;
+      this.player.equippedArmor = inv.length > 4 ? inv[4] : null;
+      this.player.equippedHelm = inv.length > 5 ? inv[5] : null;
+      this.player.equippedBoots = inv.length > 6 ? inv[6] : null;
+    } catch (e) { throw new Error('[inventory setup] ' + e.message); }
 
-    this.hud = new HUD(this.ui.container, this.events);
-    this.hud.init();
+    try {
+      this.ui = new UIManager(this.events);
+      this.ui.init();
+    } catch (e) { throw new Error('[ui manager] ' + e.message); }
 
-    this.mainMenu = new MainMenu(this.ui.container, this.events);
-    this.mainMenu.init();
-    this.pauseMenu = new PauseMenu(this.ui.container, this.events);
-    this.pauseMenu.init();
-    this.settingsPanel = new SettingsPanel(this.ui.container, this.events, this.audio);
-    this.settingsPanel.init();
-    this.inventoryUI = new InventoryUI(this.ui.container, this.events);
-    this.inventoryUI.init();
+    try {
+      this.hud = new HUD(this.ui.container, this.events);
+      this.hud.init();
+    } catch (e) { throw new Error('[hud] ' + e.message); }
 
-    this.craftingUI = new CraftingUI(this.ui.container, this.events);
-    this.craftingUI.init();
+    try {
+      this.mainMenu = new MainMenu(this.ui.container, this.events);
+      this.mainMenu.init();
+      this.pauseMenu = new PauseMenu(this.ui.container, this.events);
+      this.pauseMenu.init();
+      this.settingsPanel = new SettingsPanel(this.ui.container, this.events, this.audio);
+      this.settingsPanel.init();
+      this.inventoryUI = new InventoryUI(this.ui.container, this.events);
+      this.inventoryUI.init();
+    } catch (e) { throw new Error('[menus/inventory ui] ' + e.message); }
 
-    this.dialogueUI = new DialogueUI(this.ui.container, this.events);
-    this.dialogueUI.init();
+    try {
+      this.craftingUI = new CraftingUI(this.ui.container, this.events);
+      this.craftingUI.init();
+    } catch (e) { throw new Error('[crafting ui] ' + e.message); }
 
-    this.barterUI = new BarterUI(this.ui.container, this.events);
-    this.barterUI.init();
+    try {
+      this.dialogueUI = new DialogueUI(this.ui.container, this.events);
+      this.dialogueUI.init();
+    } catch (e) { throw new Error('[dialogue ui] ' + e.message); }
 
-    this.deathScreen = new DeathScreen(this.ui.container, this.events);
-    this.deathScreen.init();
-    this.legacyScreen = new LegacyScreen(this.ui.container, this.events);
-    this.legacyScreen.init();
-    this.creditsScreen = new CreditsScreen(this.ui.container, this.events);
-    this.creditsScreen.init();
+    try {
+      this.barterUI = new BarterUI(this.ui.container, this.events);
+      this.barterUI.init();
+    } catch (e) { throw new Error('[barter ui] ' + e.message); }
 
-    this.particles = new ParticleSystem(this.renderer.getScene(), this.renderer.getCamera());
+    try {
+      this.deathScreen = new DeathScreen(this.ui.container, this.events);
+      this.deathScreen.init();
+      this.legacyScreen = new LegacyScreen(this.ui.container, this.events);
+      this.legacyScreen.init();
+      this.creditsScreen = new CreditsScreen(this.ui.container, this.events);
+      this.creditsScreen.init();
+    } catch (e) { throw new Error('[death/legacy/credits ui] ' + e.message); }
 
-    this.loadingScreen = new LoadingScreen(this.ui.container);
-    this.loadingScreen.init();
+    try {
+      this.particles = new ParticleSystem(this.renderer.getScene(), this.renderer.getCamera());
+    } catch (e) { throw new Error('[particles] ' + e.message); }
 
-    this.touchControls = new TouchControls(document.body, this.events);
-    this.touchControls.init();
+    try {
+      this.loadingScreen = new LoadingScreen(this.ui.container);
+      this.loadingScreen.init();
+    } catch (e) { throw new Error('[loading screen] ' + e.message); }
 
-    this._createInteractPrompt();
-    this.zoneManager._populateZone('village');
-    this._spawnCraftingStations();
-    this._spawnNPCs();
-    this.questSystem = new QuestSystem(this.events, this.player);
-    this._setupEvents();
-    this._setupResizeHandler();
+    try {
+      this.touchControls = new TouchControls(document.body, this.events);
+      this.touchControls.init();
+    } catch (e) { throw new Error('[touch controls] ' + e.message); }
+
+    try {
+      this._createInteractPrompt();
+      this.zoneManager._populateZone('village');
+      this._spawnCraftingStations();
+      this._spawnNPCs();
+      this.questSystem = new QuestSystem(this.events, this.player);
+    } catch (e) { throw new Error('[world population] ' + e.message); }
+
+    try {
+      this._setupEvents();
+      this._setupResizeHandler();
+    } catch (e) { throw new Error('[event setup] ' + e.message); }
 
     this.running = true;
     this.lastTime = performance.now();
 
-    this.mainMenu.show();
-    this.touchControls.hide();
-    this.hud.element.style.display = 'none';
+    try {
+      this.mainMenu.show();
+      this.touchControls.hide();
+      this.hud.element.style.display = 'none';
+    } catch (e) { throw new Error('[ui show] ' + e.message); }
 
-    this.save.startAutoSave(() => this._getSaveData());
+    try {
+      this.save.startAutoSave(() => this._getSaveData());
+    } catch (e) { throw new Error('[auto save] ' + e.message); }
   }
 
   _createInteractPrompt() {

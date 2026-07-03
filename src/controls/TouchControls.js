@@ -177,6 +177,7 @@ export class TouchControls {
   reposition() {
     const btnSize = Math.min(window.innerWidth, window.innerHeight) * 0.1;
     this.joystick.setRadius(btnSize * 0.9);
+    if (this.buttons.length < 7) return;
     this.buttons[0].setPosition({ bottom: btnSize * 0.5, right: btnSize * 0.5 });
     this.buttons[1].setPosition({ bottom: btnSize * 1.6 + 10, right: btnSize * 1.6 + 10 });
     this.buttons[2].setPosition({ bottom: btnSize * 0.5, right: btnSize * 1.7 + 10 });
