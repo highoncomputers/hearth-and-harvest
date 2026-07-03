@@ -123,7 +123,7 @@ export class SettingsPanel {
     const cRow = document.createElement('div');
     cRow.style.cssText = 'margin-bottom: 8px;';
     const cInfo = document.createElement('p');
-    cInfo.innerHTML = 'WASD: Move &nbsp;|&nbsp; E: Interact &nbsp;|&nbsp; Q: Dodge<br>F: Block &nbsp;|&nbsp; Space: Jump &nbsp;|&nbsp; I: Inventory<br>Click: Attack &nbsp;|&nbsp; Esc: Pause';
+      cInfo.innerHTML = 'WASD: Move &nbsp;|&nbsp; E: Interact &nbsp;|&nbsp; Tab: Lock-On<br>F: Block &nbsp;|&nbsp; Space: Jump &nbsp;|&nbsp; Q: Dodge<br>I: Inventory &nbsp;|&nbsp; Click: Attack &nbsp;|&nbsp; Esc: Pause<br>Sprint+Click: Heavy Attack';
     cInfo.style.cssText = 'color: #8B7355; font-size: 10px; line-height: 1.6; margin: 0;';
     cRow.appendChild(cInfo);
     frame.appendChild(cRow);

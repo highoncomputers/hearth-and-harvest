@@ -1,12 +1,14 @@
 import * as THREE from 'three';
 import { Entity } from './Entity.js';
 import { CONFIG } from '../config.js';
+import { getItemDef } from '../systems/Inventory.js';
 
 export class Player extends Entity {
-  constructor(scene, physics, camera, events) {
+  constructor(scene, physics, camera, events, audio) {
     super(scene, physics);
     this.camera = camera;
     this.events = events;
+    this.audio = audio;
     this.entityType = 'player';
 
     this.health = CONFIG.PLAYER.HEALTH_MAX;
@@ -308,6 +310,8 @@ export class Player extends Entity {
     if (this.camera) {
       this.camera.lockOn(target);
     }
+    this.events.emit('player:lockOn', { target });
+    this.events.emit('hud:showLockOn');
   }
 
   unlock() {
@@ -316,6 +320,124 @@ export class Player extends Entity {
     if (this.camera) {
       this.camera.unlock();
     }
+    this.events.emit('player:unlock');
+    this.events.emit('hud:hideLockOn');
+  }
+
+  toggleLockOn(enemies) {
+    if (this.lockedOn) {
+      this.unlock();
+      return;
+    }
+    let closest = null;
+    let closestDist = CONFIG.COMBAT.LOCK_ON_RANGE;
+    const pPos = this.mesh.position;
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      const dist = e.mesh.position.distanceTo(pPos);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = e;
+      }
+    }
+    if (closest) this.lockOn(closest);
+  }
+
+  move(moveX, moveY, delta) {
+    if (!this.body || this.dodging) return;
+
+    if (this.lockedOn && this.lockTarget && this.lockTarget.alive) {
+      const targetDir = new THREE.Vector3().copy(this.lockTarget.mesh.position).sub(this.mesh.position);
+      targetDir.y = 0;
+      if (targetDir.length() > 0.1) {
+        this.mesh.rotation.y = Math.atan2(targetDir.x, targetDir.z);
+      }
+      const right = new THREE.Vector3(-targetDir.z, 0, targetDir.x).normalize();
+      const forward = new THREE.Vector3(targetDir.x, 0, targetDir.z).normalize();
+      const dir = new THREE.Vector3()
+        .addScaledVector(right, moveX)
+        .addScaledVector(forward, -moveY);
+      if (dir.length() > 0) {
+        dir.normalize();
+        const speed = this.sprinting ? this.speed * CONFIG.PLAYER.SPRINT_MULT : this.speed;
+        this.body.velocity.x = dir.x * speed;
+        this.body.velocity.z = dir.z * speed;
+        if (this.sprinting && this.stamina > 0) this.stamina -= 10 * delta;
+      } else {
+        this.body.velocity.x *= 0.85;
+        this.body.velocity.z *= 0.85;
+      }
+      return;
+    }
+
+    const forward = this.camera ? this.camera.getForward() : new THREE.Vector3(0, 0, -1);
+    const right = this.camera ? this.camera.getRight() : new THREE.Vector3(1, 0, 0);
+    const dir = new THREE.Vector3()
+      .addScaledVector(right, moveX)
+      .addScaledVector(forward, -moveY);
+    if (dir.length() > 0) {
+      dir.normalize();
+      const speed = this.sprinting ? this.speed * CONFIG.PLAYER.SPRINT_MULT : this.speed;
+      this.body.velocity.x = dir.x * speed;
+      this.body.velocity.z = dir.z * speed;
+      const targetAngle = Math.atan2(dir.x, dir.z);
+      this.mesh.rotation.y = targetAngle;
+      if (this.sprinting && this.stamina > 0) this.stamina -= 10 * delta;
+    } else {
+      this.body.velocity.x *= 0.85;
+      this.body.velocity.z *= 0.85;
+    }
+  }
+
+  lightAttack() {
+    if (this.attacking || this.dodging) return;
+    if (this.stamina < CONFIG.COMBAT.LIGHT_STAMINA_COST) return;
+
+    this.attacking = true;
+    this.attackType = 'light';
+    this.stamina -= CONFIG.COMBAT.LIGHT_STAMINA_COST;
+    this.comboCount++;
+    this.comboTimer = CONFIG.COMBAT.COMBO_WINDOW;
+
+    let dmg = CONFIG.COMBAT.LIGHT_ATTACK_DAMAGE;
+    if (this.equippedWeapon) {
+      const def = getItemDef(this.equippedWeapon.id);
+      if (def && def.damage) dmg += def.damage;
+    }
+    dmg *= (1 + this.skills.combat * 0.05);
+
+    if (this.comboCount >= 3) {
+      dmg *= 1.5;
+      this.events.emit('combat:combo', { count: this.comboCount });
+    }
+
+    this.events.emit('player:attack', { type: 'light', combo: this.comboCount, damage: dmg });
+    if (this.audio) this.audio.playSFX('sword_swing', 0.4);
+
+    setTimeout(() => { this.attacking = false; }, 300);
+    this._performAttackHit(dmg);
+  }
+
+  heavyAttack() {
+    if (this.attacking || this.dodging) return;
+    if (this.stamina < CONFIG.COMBAT.HEAVY_STAMINA_COST) return;
+
+    this.attacking = true;
+    this.attackType = 'heavy';
+    this.stamina -= CONFIG.COMBAT.HEAVY_STAMINA_COST;
+
+    let dmg = CONFIG.COMBAT.HEAVY_ATTACK_DAMAGE;
+    if (this.equippedWeapon) {
+      const def = getItemDef(this.equippedWeapon.id);
+      if (def && def.damage) dmg += def.damage * 1.5;
+    }
+    dmg *= (1 + this.skills.combat * 0.05);
+
+    this.events.emit('player:attack', { type: 'heavy', combo: this.comboCount, damage: dmg });
+    if (this.audio) this.audio.playSFX('sword_swing', 0.6);
+
+    setTimeout(() => { this.attacking = false; }, 600);
+    this._performAttackHit(dmg);
   }
 
   takeDamage(amount, source) {

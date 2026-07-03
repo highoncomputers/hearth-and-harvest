@@ -16,6 +16,7 @@ export class InputManager {
       block: false, dodge: false,
       jump: false, sprint: false,
       interact: false, inventory: false,
+      lockOn: false,
       pause: false,
     };
     this.prevActions = {};

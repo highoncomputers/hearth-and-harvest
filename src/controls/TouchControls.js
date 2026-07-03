@@ -62,6 +62,17 @@ export class TouchControls {
       action: 'jump',
     });
 
+    this._createButton('lockon', {
+      label: '\u2316',
+      size: btnSize * 0.65,
+      fontSize: btnSize * 0.35,
+      bg: 'rgba(150,100,200,0.25)',
+      border: 'rgba(150,100,200,0.5)',
+      activeBg: 'rgba(150,100,200,0.5)',
+      position: { bottom: 'auto', top: btnSize * 0.5, left: '50%' },
+      action: 'lockOn',
+    });
+
     this._createButton('interact', {
       label: '\u270B',
       size: btnSize * 0.7,
@@ -69,7 +80,7 @@ export class TouchControls {
       bg: 'rgba(255,255,255,0.15)',
       border: 'rgba(255,255,255,0.3)',
       activeBg: 'rgba(255,255,255,0.35)',
-      position: { bottom: 'auto', top: btnSize * 0.5, right: btnSize * 0.5 },
+      position: { bottom: 'auto', top: btnSize * 1.4, right: btnSize * 0.5 },
       action: 'interact',
     });
 
@@ -140,6 +151,7 @@ export class TouchControls {
         else if (config.action === 'dodge') inputManager.actions.dodge = true;
         else if (config.action === 'jump') inputManager.actions.jump = true;
         else if (config.action === 'interact') inputManager.actions.interact = true;
+        else if (config.action === 'lockOn') inputManager.actions.lockOn = true;
       }
     }
   }
@@ -163,7 +175,8 @@ export class TouchControls {
     this.buttons[1].setPosition({ bottom: btnSize * 1.6 + 10, right: btnSize * 1.6 + 10 });
     this.buttons[2].setPosition({ bottom: btnSize * 0.5, right: btnSize * 1.7 + 10 });
     this.buttons[3].setPosition({ bottom: btnSize * 1.6 + 10, right: btnSize * 0.5 });
-    this.buttons[4].setPosition({ bottom: 'auto', top: btnSize * 0.5, right: btnSize * 0.5 });
+    this.buttons[4].setPosition({ bottom: 'auto', top: btnSize * 0.5, left: '50%' });
+    this.buttons[5].setPosition({ bottom: 'auto', top: btnSize * 1.4, right: btnSize * 0.5 });
   }
 
   dispose() {

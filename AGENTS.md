@@ -20,34 +20,40 @@ Medieval life survival sim — third-person 3D browser game built with Three.js 
 - First commit pushed to main
 
 ### Session 2 (July 3, 2026)
-- Phase 2 Core Systems: 9/12 tasks completed
-- Created Inventory system with full item definitions (30+ items across 6 categories)
-- Created InventoryUI with 30-slot grid, drag-and-drop, categories, durability bars
-- Created MainMenu (New Game, Continue, Settings, Credits)
-- Created PauseMenu (Resume, Save, Load, Settings, Quit)
-- Created SettingsPanel (graphics quality tiers, master/music/SFX sliders, controls info)
-- Created ResourceNode entity (tree, rock, iron_ore, bush, clay, flax with harvest/respawn)
-- Created ItemEntity (dropped items on ground with bob/glow/animation)
-- Updated Game.js with full menu flow, inventory toggle, resource spawning, item pickup/prompt
-- Fixed vite.config.js for Vite 8 compatibility (eval removed from MainMenu)
+- Phase 2 Core Systems: 9/12 tasks
+- Inventory, UI panels, Resources, Items
+
+### Session 3 (July 3, 2026)
+- Phase 3 Combat: 12/14 tasks completed
+- Created CombatSystem.js — hit detection, stagger, hitstop, camera shake, knockback
+- Created Enemy.js — full AI state machine (IDLE/PATROL/ALERT/CHASE/ATTACK/STAGGER/FLEE/DEAD)
+- Created Bandit.js — patrols, chases, can block attacks, drops loot
+- Created Wolf.js — fast pack hunter, pounce behavior, fleeing
+- Created Boar.js — charging attack, high damage, aggressive
+- Enemy telegraphs — red ring indicator before attack
+- Lock-on targeting — toggle via Tab key or lockOn button, strafe movement
+- Weapon damage scaling — iron sword + skill bonuses
+- Hitstop on impact (0.04-0.2s freeze), camera shake proportional to damage
+- Inventory: added iron_sword, wood_shield, bow, arrows as starting gear
+- TouchControls: added lock-on button
+- Enemies respawn when count drops below 5
+- Loot drops on death (items spawn as ItemEntity on ground)
 
 ## Current State
-- Full game flow: Main Menu → New Game/Continue → Gameplay → Pause/Inventory/Settings
-- 40+ resource nodes spawn on terrain (trees, rocks, bushes, ore, clay, flax)
-- Items can be picked up from ground (interact prompt shows, [E] to pick up)
-- Inventory UI with 30-slot grid, 6 categories, drag-and-drop, durability display
-- Main menu with New Game, Continue, Settings, Credits
-- Pause menu with Resume, Save, Load, Settings, Quit to Menu
-- Settings with 5 graphics quality tiers and audio volume sliders
+- Full combat system: lock-on, light/heavy attacks, block, dodge, stagger, telegraphs, hitstop
+- 11 enemies spawn initially (5 bandits, 4 wolves, 2 boars) with full AI states
+- Combat includes stagger chains, knockback physics, weapon durability
+- All previous systems (inventory, menu, resources, saves) still work
 
 ## What's Next
-- Phase 2 remaining: Zone loading system (hub + 6 zones with fade transitions)
-- Then Phase 3: Combat (lock-on, combos, enemy AI, weapon tiers, armor)
+- Phase 3 remaining: Armor system, Bow combat
+- Phase 4: World Zones (7 zones with transition gates)
+- Phase 5: Farming & Crafting
 
 ## Known Issues
-- Resource respawning needs timer tuning
-- Touch controls repositioning on orientation change needs testing
-- Zone system still loads single world -- multi-zone gates not yet implemented
+- No armor damage reduction implemented yet
+- Bow combat needs arrow projectile implementation
+- Enemy respawning could be more gradual
 
 ## Commands
 ```bash

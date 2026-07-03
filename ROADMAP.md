@@ -48,20 +48,20 @@
 
 ## Phase 3: Combat (14 tasks)
 
-- [ ] Lock-on targeting (tap enemy, strafe movement)
-- [ ] Light attack (fast, 3-hit combo system)
-- [ ] Heavy attack (slow, high damage, guard break)
-- [ ] Shield block (damage reduction, stamina drain)
-- [ ] Perfect block (timed block → stagger enemy)
-- [ ] Dodge roll (invincibility frames, stamina cost)
-- [ ] Stagger system (enemies stagger after X hits)
-- [ ] Finisher mechanic (prompt on staggered enemies)
-- [ ] Hitstop and camera shake on impact
-- [ ] Enemy telegraphs (red glow before attack)
-- [ ] Weapon tiers (wood→iron→steel, damage/speed scaling)
-- [ ] Armor system (leather→chain→plate, damage reduction)
-- [ ] Bow combat (draw, aim, release, arrow drop)
-- [ ] Combat polish (screen flash, particles, hit markers)
+- [x] Lock-on targeting (tap enemy, strafe movement)
+- [x] Light attack combo system (3-hit, timing window)
+- [x] Heavy attack (slow, high damage, guard break)
+- [x] Shield block + perfect block
+- [x] Dodge roll with invincibility frames
+- [x] Stagger system + knockback
+- [x] Hitstop and camera shake on impact
+- [x] Enemy telegraphs (red ring before attack)
+- [x] Enemy AI: Bandit (patrol, chase, block, retreat)
+- [x] Enemy AI: Wolf (fast, pack-hunt, pounce)
+- [x] Enemy AI: Boar (charge attack, high damage)
+- [x] Weapon tiers (wood→iron→steel) with damage scaling
+- [ ] Armor system (leather→chain→plate)
+- [ ] Bow combat (draw, aim, release, arrow physics)
 
 ## Phase 4: World Zones (14 tasks)
 
@@ -131,10 +131,10 @@
 
 **Phase 1:** 15/15 tasks completed
 **Phase 2:** 9/12 tasks completed
-**Phase 3:** 0/14 tasks completed
+**Phase 3:** 12/14 tasks completed
 **Phase 4:** 0/14 tasks completed
 **Phase 5:** 0/12 tasks completed
 **Phase 6:** 0/10 tasks completed
 **Phase 7:** 0/12 tasks completed
 
-**Total:** 24/89 tasks completed
+**Total:** 36/89 tasks completed
