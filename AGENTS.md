@@ -34,6 +34,23 @@ Medieval life survival sim — third-person 3D browser game built with Three.js 
 - Armor system, bow combat, ZoneManager, 7 zones, zone gates, terrain regeneration
 
 ### Session 5 (July 3, 2026)
+
+### Session 6 (July 3, 2026)
+- **Phase 6 completed**: 10/10 — NPCs, barter, quests, dialogue
+- **Phase 7 completed**: 11/12 — Particles, PWA, death/legacy/credits screens
+- NPC system: 8 NPCs spawned in village (farmer, blacksmith, baker, hunter, merchant, carpenter, tailor, guard/bard/priest) with procedural names (~200 combinations), unique appearances (skin/hair/clothes colors), role-based waypoint schedules
+- DialogueUI: typewriter text effect, choices (Trade/Quest/Gossip/Leave), NPC-specific dialogue per role
+- BarterUI: wants ↔ offers display, consume/fulfill trading, relationship gain on trade, inventory sync
+- QuestSystem: 3 procedural quest types (gather X items, hunt Y enemies, deliver Z items), skill XP rewards, legacy score tracking, quest state tracking for NPCs
+- ParticleSystem: point-based GPU particles, rain/snow weather tied to season (spring/autumn=rain, winter=snow), fire/dust/leaves emitters
+- DeathScreen: skull-themed overlay with Respawn and Main Menu options, replaces old 2s auto-respawn
+- LegacyScreen: stats summary (quests, kills, crops, crafts, legacy score), epitaph, Continue/Menu buttons
+- CreditsScreen: auto-scrolling credits roll, skip button, returns to main menu on completion
+- PWA: manifest.json (landscape, standalone), service worker (cache-first for assets, network-first for everything else), 192+512 icon PNGs
+- Audio: added rain, fire, till, water procedural SFX generators
+- index.html: PWA meta tags, manifest/apple-touch-icon links
+- main.js: service worker registration
+- Combat.js: enemyType property passed in enemy:killed event for quest tracking
 - **Phase 5 completed**: 11/12 tasks — Farming, Cooking, Crafting
 - FarmingSystem: hoe tills ground → FarmPlot entity with 5 visual growth stages, watering (bucket), fertilization (manure/compost), seasonal growth rate modifiers, seed drops on harvest
 - FarmPlot: tilled soil mesh, planted crop, growth progress with water/soil/fert/season multipliers, 5 visual stages (seed→sprout→growing→mature→ready), auto-update

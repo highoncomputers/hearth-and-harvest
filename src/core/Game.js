@@ -21,6 +21,15 @@ import { FarmingSystem } from '../systems/FarmingSystem.js';
 import { CraftingStation } from '../entities/CraftingStation.js';
 import { CraftingUI } from '../ui/CraftingUI.js';
 import { RECIPES, getRecipesForStation, canCraft, craft, getRepairCost, repairItem, STATION_TYPES } from '../systems/Crafting.js';
+import { NPC } from '../entities/NPC.js';
+import { generateNPCs } from '../systems/NPCGenerator.js';
+import { QuestSystem } from '../systems/QuestSystem.js';
+import { DialogueUI } from '../ui/DialogueUI.js';
+import { BarterUI } from '../ui/BarterUI.js';
+import { DeathScreen } from '../ui/DeathScreen.js';
+import { LegacyScreen } from '../ui/LegacyScreen.js';
+import { CreditsScreen } from '../ui/CreditsScreen.js';
+import { ParticleSystem } from '../graphics/Particles.js';
 import { TouchControls } from '../controls/TouchControls.js';
 import { UIManager } from '../ui/UIManager.js';
 import { HUD } from '../ui/HUD.js';
@@ -66,7 +75,16 @@ export class Game {
     this.farming = null;
     this.craftingStations = [];
     this.craftingUI = null;
+    this.npcs = [];
+    this.questSystem = null;
+    this.dialogueUI = null;
+    this.barterUI = null;
+    this.deathScreen = null;
+    this.legacyScreen = null;
+    this.creditsScreen = null;
+    this.particles = null;
     this.arrows = [];
+    this.stats = { enemiesKilled: 0, cropsHarvested: 0, itemsCrafted: 0 };
     this.craftingPrompt = null;
     this.ui = null;
     this.hud = null;
@@ -160,6 +178,21 @@ export class Game {
     this.craftingUI = new CraftingUI(this.ui.container, this.events);
     this.craftingUI.init();
 
+    this.dialogueUI = new DialogueUI(this.ui.container, this.events);
+    this.dialogueUI.init();
+
+    this.barterUI = new BarterUI(this.ui.container, this.events);
+    this.barterUI.init();
+
+    this.deathScreen = new DeathScreen(this.ui.container, this.events);
+    this.deathScreen.init();
+    this.legacyScreen = new LegacyScreen(this.ui.container, this.events);
+    this.legacyScreen.init();
+    this.creditsScreen = new CreditsScreen(this.ui.container, this.events);
+    this.creditsScreen.init();
+
+    this.particles = new ParticleSystem(this.renderer.getScene(), this.renderer.getCamera());
+
     this.loadingScreen = new LoadingScreen(this.ui.container);
     this.loadingScreen.init();
 
@@ -169,6 +202,8 @@ export class Game {
     this._createInteractPrompt();
     this.zoneManager._populateZone('village');
     this._spawnCraftingStations();
+    this._spawnNPCs();
+    this.questSystem = new QuestSystem(this.events, this.player);
     this._setupEvents();
     this._setupResizeHandler();
 
@@ -213,6 +248,11 @@ export class Game {
     this.events.on('enemy:killed', (data) => this._onEnemyKilled(data));
     this.events.on('player:rangedAttack', (data) => this._spawnArrow(data));
     this.events.on('zone:changed', (data) => this._onZoneChanged(data));
+    this.events.on('death:respawn', () => this._onDeathRespawn());
+    this.events.on('death:quit', () => this._onDeathQuit());
+    this.events.on('legacy:continue', () => this._onLegacyContinue());
+    this.events.on('legacy:quit', () => this._onLegacyQuit());
+    this.events.on('menu:credits', () => this._showCredits());
   }
 
   _spawnItemEntity(itemId, quantity, position) {
@@ -333,6 +373,7 @@ export class Game {
     if (this.input.getActionDown('interact')) {
       if (this.zoneManager.isAtAnyGate()) {
         this._handleGateTravel();
+      } else if (this._handleNPCInteract()) {
       } else if (this._handleFarmingInteract()) {
       } else {
         this._handleInteract({ pos: this.player.mesh.position });
@@ -344,6 +385,8 @@ export class Game {
     if (this.input.getActionDown('pause')) {
       if (this.inventoryUI.isVisible()) this.inventoryUI.hide();
       if (this.craftingUI.isVisible()) this.craftingUI.hide();
+      if (this.dialogueUI.isVisible()) this.dialogueUI.hide();
+      if (this.barterUI.isVisible()) this.barterUI.hide();
       this._togglePause();
       return;
     }
@@ -362,6 +405,8 @@ export class Game {
     this._updateZoneGates(delta);
     this._updateFarming(delta);
     this._updateStations(delta);
+    this._updateNPCs(delta);
+    this._updateParticles(delta);
 
     this.player.update(delta);
     this.physics.update(delta);
@@ -382,6 +427,17 @@ export class Game {
 
     const nearStation = this.craftingStations.find(s => s.alive && s.isPlayerNear(pPos, 2.5));
     if (nearStation) return;
+
+    const nearNPC = this.npcs.find(n => n.alive && n.isPlayerNear(pPos));
+    if (nearNPC) {
+      const quest = this.questSystem?.getAvailableQuest(nearNPC);
+      let msg = `[E] Talk to ${nearNPC.name}`;
+      if (quest && quest.completed) msg = `[E] ${nearNPC.name} — Quest complete!`;
+      else if (quest) msg = `[E] ${nearNPC.name} — Active quest`;
+      this.interactPrompt.textContent = msg;
+      this.interactPrompt.style.opacity = '1';
+      return;
+    }
 
     const plotInfo = this.farming ? this.farming.getNearestPlotInfo(pPos) : null;
 
@@ -547,8 +603,85 @@ export class Game {
     }
   }
 
+  _spawnNPCs() {
+    this.npcs = generateNPCs(this.renderer.getScene(), this.physics, this.events, this.terrain, 8);
+  }
+
+  _updateNPCs(delta) {
+    if (!this.sky || !this.player) return;
+    const tod = this.sky.time;
+    for (const npc of this.npcs) {
+      if (npc.alive) npc.update(delta, tod);
+    }
+  }
+
+  _handleNPCInteract() {
+    const pPos = this.player.mesh.position;
+    for (const npc of this.npcs) {
+      if (!npc.alive || !npc.isPlayerNear(pPos)) continue;
+
+      if (this.barterUI.isVisible()) { this.barterUI.hide(); this.resume(); return true; }
+      if (this.dialogueUI.isVisible()) { this.dialogueUI.hide(); return true; }
+
+      this.pause();
+      const npcDialogue = npc.dialogue || { greeting:'Hello.', trade:'...', quest:'...', gossip:'...' };
+
+      const choices = [
+        { label: `[Trade] Barter with ${npc.name}`, action: () => {
+          this.dialogueUI.hide();
+          this.barterUI.show(npc, this.player.inventory);
+        }},
+        { label: '[Quest] Any work?', action: () => {
+          let quest = this.questSystem.getAvailableQuest(npc);
+          if (!quest) quest = this.questSystem.generateNewQuest(npc);
+          if (quest) {
+            if (quest.completed) {
+              this.questSystem.completeQuest(quest.id, this.player.inventory);
+              this.events.emit('inventory:changed', this.player.inventory);
+              this.dialogueUI.show(npc, `Thank you! Here's your reward.`, [{ label: '[Leave]', action: () => { this.dialogueUI.hide(); this.resume(); } }]);
+            } else {
+              this.dialogueUI.show(npc, `Yes! ${quest.desc} (${quest.progress}/${quest.targetQty})`, [
+                { label: '[Leave]', action: () => { this.dialogueUI.hide(); this.resume(); } }
+              ]);
+            }
+          } else {
+            this.dialogueUI.show(npc, `Nothing right now, thanks.`, [{ label: '[Leave]', action: () => { this.dialogueUI.hide(); this.resume(); } }]);
+          }
+        }},
+        { label: '[Gossip]', action: () => {
+          this.dialogueUI.show(npc, npcDialogue.gossip || `Nothing new.`, [{ label: '[Leave]', action: () => { this.dialogueUI.hide(); this.resume(); } }]);
+        }},
+        { label: '[Leave]', action: () => { this.dialogueUI.hide(); this.resume(); }},
+      ];
+      this.dialogueUI.show(npc, npcDialogue.greeting || `Hello, stranger.`, choices);
+      return true;
+    }
+    return false;
+  }
+
+  _updateParticles(delta) {
+    if (!this.particles) return;
+    this.particles.update(delta);
+
+    if (this.sky) {
+      const season = this.sky.season || 'spring';
+      const rainSeasons = ['spring', 'autumn'];
+      if (rainSeasons.includes(season) && this.particles.weather !== 'rain') {
+        this.particles.startWeather('rain', 0.6);
+      } else if (season === 'winter' && this.particles.weather !== 'snow') {
+        this.particles.startWeather('snow', 0.8);
+      } else if (!rainSeasons.includes(season) && season !== 'winter' && this.particles.weather !== 'clear') {
+        this.particles.stopWeather();
+      }
+    }
+  }
+
   _onEnemyKilled(data) {
     this.combat.clearLockOn();
+    this.stats.enemiesKilled++;
+    if (this.questSystem && data?.enemyType) {
+      this.questSystem.updateProgress(data.enemyType);
+    }
   }
 
   _spawnArrow(data) {
@@ -703,7 +836,7 @@ export class Game {
   }
 
   _toggleInventory() {
-    if (this.pauseMenu.isVisible() || this.craftingUI.isVisible()) return;
+    if (this.pauseMenu.isVisible() || this.craftingUI.isVisible() || this.dialogueUI.isVisible() || this.barterUI.isVisible()) return;
     this.inventoryUI.toggle(this.player.inventory);
     if (this.inventoryUI.isVisible()) {
       this.pause();
@@ -747,7 +880,43 @@ export class Game {
 
   _onPlayerDeath() {
     this.pause();
-    setTimeout(() => { this.player.respawn(); this.resume(); }, 2000);
+    this.touchControls.hide();
+    this.hud.element.style.display = 'none';
+    this.deathScreen.show();
+  }
+
+  _onDeathRespawn() {
+    this.deathScreen.hide();
+    this.player.respawn();
+    this.player.setPosition(0, 3, 0);
+    this.touchControls.show();
+    this.hud.element.style.display = '';
+    this.resume();
+  }
+
+  _onDeathQuit() {
+    this.deathScreen.hide();
+    this._quitToMenu();
+  }
+
+  _onLegacyContinue() {
+    this.legacyScreen.hide();
+    this.touchControls.show();
+    this.hud.element.style.display = '';
+    this.resume();
+  }
+
+  _onLegacyQuit() {
+    this.legacyScreen.hide();
+    this._quitToMenu();
+  }
+
+  _showCredits() {
+    this.mainMenu.hide();
+    this.creditsScreen.show(() => {
+      this.creditsScreen.hide();
+      this.mainMenu.show();
+    });
   }
 
   _onRespawn() { this.cameraCtrl.shake(0.3, 0.5); }
@@ -817,7 +986,15 @@ export class Game {
     if (this.zoneManager) this.zoneManager.dispose();
     if (this.farming) this.farming.dispose();
     if (this.craftingUI) this.craftingUI.dispose();
+    if (this.dialogueUI) this.dialogueUI.dispose();
+    if (this.barterUI) this.barterUI.dispose();
+    if (this.questSystem) this.questSystem.dispose();
+    if (this.particles) this.particles.dispose();
+    if (this.deathScreen) this.deathScreen.dispose();
+    if (this.legacyScreen) this.legacyScreen.dispose();
+    if (this.creditsScreen) this.creditsScreen.dispose();
     for (const s of this.craftingStations) s.dispose();
+    for (const n of this.npcs) n.dispose();
     if (this.touchControls) this.touchControls.dispose();
     if (this.hud) this.hud.dispose();
     if (this.mainMenu) this.mainMenu.dispose();

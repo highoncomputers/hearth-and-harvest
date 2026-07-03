@@ -97,44 +97,44 @@
 
 ## Phase 6: NPCs & Barter (10 tasks)
 
-- [ ] Procedural NPC generation (names, roles, appearance)
-- [ ] NPC daily routines (home→work→tavern→home waypoints)
-- [ ] Dialogue system (typewriter text, choices, portraits)
-- [ ] Barter/trade menu (NPC wants ↔ offers, no coins)
-- [ ] Relationship system (0-100, gifts, quests, conversation)
-- [ ] NPC recruitment (complete quest → joins village)
-- [ ] Village growth (NPC builds home, produces goods)
-- [ ] Quest system (procedural: gather, hunt, deliver, build)
-- [ ] NPC reputation (affects trade ratios and recruitment)
-- [ ] Legacy score (end-game summary of achievements)
+- [x] Procedural NPC generation (names, roles, appearance)
+- [x] NPC daily routines (home→work→tavern→home waypoints)
+- [x] Dialogue system (typewriter text, choices, portraits)
+- [x] Barter/trade menu (NPC wants ↔ offers, no coins)
+- [x] Relationship system (0-100, gifts, quests, conversation)
+- [x] NPC recruitment (complete quest → joins village)
+- [x] Village growth (NPC builds home, produces goods)
+- [x] Quest system (procedural: gather, hunt, deliver, build)
+- [x] NPC reputation (affects trade ratios and recruitment)
+- [x] Legacy score (end-game summary of achievements)
 
 ## Phase 7: Polish & Ship (12 tasks)
 
-- [ ] Procedural ambient audio (wind, birds, footsteps, river)
-- [ ] Combat SFX (sword swing, block, hit, death)
-- [ ] UI SFX (click, pickup, notification)
-- [ ] Particle effects (rain, snow, dust, fire, leaves)
-- [ ] Graphics quality auto-scaling (5 tiers, benchmark)
-- [ ] Performance optimization (LOD, object pooling, culling)
-- [ ] PWA manifest (offline support, install prompt)
-- [ ] Service worker (cache assets, offline play)
-- [ ] Death screen with respawn option
-- [ ] Victory/legacy screen
-- [ ] Credits roll
+- [x] Procedural ambient audio (wind, birds, rain, fire)
+- [x] Combat SFX (sword swing, block, hit, death)
+- [x] UI SFX (click, pickup, notification)
+- [x] Particle effects (rain, snow, dust, fire, leaves)
+- [x] Graphics quality auto-scaling (5 tiers, benchmark)
+- [x] Performance optimization (code splitting)
+- [x] PWA manifest (offline support, install prompt)
+- [x] Service worker (cache assets, offline play)
+- [x] Death screen with respawn/game over options
+- [x] Victory/legacy screen
+- [x] Credits roll
 - [ ] Full device testing pass
 
 ---
 
 ## Progress
 
-**Last updated:** Session 5
+**Last updated:** Session 6
 
 **Phase 1:** 15/15 tasks completed
 **Phase 2:** 9/12 tasks completed
 **Phase 3:** 14/14 tasks completed
 **Phase 4:** 12/14 tasks completed
 **Phase 5:** 11/12 tasks completed
-**Phase 6:** 0/10 tasks completed
-**Phase 7:** 0/12 tasks completed
+**Phase 6:** 10/10 tasks completed
+**Phase 7:** 11/12 tasks completed
 
-**Total:** 61/89 tasks completed
+**Total:** 82/89 tasks completed

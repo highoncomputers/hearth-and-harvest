@@ -39,6 +39,10 @@ export class AudioManager {
     this.buffers.set('pickup', this._createPickupBuffer());
     this.buffers.set('hurt', this._createHurtBuffer());
     this.buffers.set('death', this._createDeathBuffer());
+    this.buffers.set('rain', this._createRainBuffer());
+    this.buffers.set('fire', this._createFireBuffer());
+    this.buffers.set('till', this._createTillBuffer());
+    this.buffers.set('water', this._createWaterBuffer());
     this.buffers.set('ambient_birds', this._createAmbientBirdsBuffer());
     this.buffers.set('ambient_wind', this._createAmbientWindBuffer());
   }
@@ -148,6 +152,44 @@ export class AudioManager {
         const t = i / this.ctx.sampleRate;
         const freq = 300 - t * 280;
         data[i] = Math.sin(2 * Math.PI * Math.max(freq, 20) * t) * Math.exp(-t * 3) * 0.4;
+      }
+    });
+  }
+
+  _createRainBuffer() {
+    return this._createBuffer(2, (data) => {
+      for (let i = 0; i < data.length; i++) {
+        const t = i / this.ctx.sampleRate;
+        data[i] = (Math.random() * 2 - 1) * Math.max(0, Math.sin(t * 200) * 0.5) * 0.4;
+      }
+    });
+  }
+
+  _createFireBuffer() {
+    return this._createBuffer(1, (data) => {
+      for (let i = 0; i < data.length; i++) {
+        const t = i / this.ctx.sampleRate;
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 3) * 0.3 +
+          Math.sin(2 * Math.PI * (100 + Math.random() * 50) * t) * 0.1;
+      }
+    });
+  }
+
+  _createTillBuffer() {
+    return this._createBuffer(0.3, (data) => {
+      for (let i = 0; i < data.length; i++) {
+        const t = i / this.ctx.sampleRate;
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 20) * 0.5 +
+          Math.sin(2 * Math.PI * 80 * t) * Math.exp(-t * 15) * 0.3;
+      }
+    });
+  }
+
+  _createWaterBuffer() {
+    return this._createBuffer(0.5, (data) => {
+      for (let i = 0; i < data.length; i++) {
+        const t = i / this.ctx.sampleRate;
+        data[i] = Math.sin(2 * Math.PI * (300 + t * 200) * t) * Math.exp(-t * 8) * 0.4;
       }
     });
   }

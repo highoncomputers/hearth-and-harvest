@@ -109,7 +109,7 @@ export class CombatSystem {
       this._triggerHitstop(0.2);
       if (this.camera) this.camera.shake(0.4, 0.3);
       if (this.audio) this.audio.playSFX('death');
-      this.events.emit('enemy:killed', { enemy, source });
+      this.events.emit('enemy:killed', { enemy, source, enemyType: enemy.enemyType });
       setTimeout(() => {
         if (enemy.alive === false) {
           enemy.dropLoot();

@@ -1,5 +1,9 @@
 import { Game } from './core/Game.js';
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
 async function main() {
   try {
     const game = new Game();
