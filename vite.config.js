@@ -6,13 +6,13 @@ export default defineConfig({
     outDir: 'dist',
     assetsInlineLimit: 8192,
     sourcemap: false,
-    minify: 'terser',
+    minify: 'esbuild',
     target: 'es2020',
     rollupOptions: {
       output: {
-        manualChunks: {
-          three: ['three'],
-          cannon: ['cannon-es'],
+        manualChunks(id) {
+          if (id.includes('node_modules/three/')) return 'three';
+          if (id.includes('node_modules/cannon-es/')) return 'cannon';
         },
       },
     },

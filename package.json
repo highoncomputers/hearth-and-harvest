@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "cannon-es": "^0.20.0",
+    "esbuild": "^0.28.1",
     "three": "^0.185.1"
   }
 }
