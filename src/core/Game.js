@@ -10,18 +10,26 @@ import { SkyCycle } from '../graphics/SkyCycle.js';
 import { Water } from '../graphics/Water.js';
 import { Physics } from '../physics/Physics.js';
 import { Player } from '../entities/Player.js';
+import { ResourceNode } from '../entities/ResourceNode.js';
+import { ItemEntity } from '../entities/ItemEntity.js';
 import { TouchControls } from '../controls/TouchControls.js';
 import { UIManager } from '../ui/UIManager.js';
 import { HUD } from '../ui/HUD.js';
 import { LoadingScreen } from '../ui/LoadingScreen.js';
-import { detectDeviceCapability, getQualityTier, setQualityTier, getQualitySettings } from '../utils/device.js';
+import { MainMenu } from '../ui/MainMenu.js';
+import { PauseMenu } from '../ui/PauseMenu.js';
+import { SettingsPanel } from '../ui/SettingsPanel.js';
+import { InventoryUI } from '../ui/InventoryUI.js';
+import { detectDeviceCapability, setQualityTier, getQualitySettings } from '../utils/device.js';
 import { CONFIG } from '../config.js';
+import { createItem, addToInventory, getItemDef, ITEM_DEFS } from '../systems/Inventory.js';
 
 export class Game {
   constructor() {
     this.events = new EventSystem();
     this.running = false;
     this.paused = false;
+    this.gameStarted = false;
     this.delta = 0;
     this.lastTime = 0;
     this.frameCount = 0;
@@ -39,28 +47,33 @@ export class Game {
     this.water = null;
     this.physics = null;
     this.player = null;
+    this.resources = [];
+    this.itemEntities = [];
     this.touchControls = null;
     this.ui = null;
     this.hud = null;
+    this.mainMenu = null;
+    this.pauseMenu = null;
+    this.settingsPanel = null;
+    this.inventoryUI = null;
     this.loadingScreen = null;
+    this.interactPrompt = null;
 
     this.currentZone = 'village';
     this.zonesLoaded = new Set();
     this.zoneGroups = {};
+    this.itemPickupCooldown = 0;
   }
 
   async init() {
     const deviceInfo = detectDeviceCapability();
-    let qualityTier = deviceInfo.tier;
     const savedSettings = new SaveManager().loadSettings();
-    if (savedSettings && savedSettings.qualityTier) {
-      qualityTier = savedSettings.qualityTier;
-    }
+    let qualityTier = deviceInfo.tier;
+    if (savedSettings?.qualityTier) qualityTier = savedSettings.qualityTier;
     setQualityTier(qualityTier);
 
     this.renderer = new Renderer();
     this.renderer.init(qualityTier);
-
     this.cameraCtrl = new Camera(this.renderer.getCamera());
 
     this.physics = new Physics();
@@ -82,12 +95,15 @@ export class Game {
 
     this.terrain = new Terrain(this.renderer.getScene(), qualityTier);
     this.terrain.generate();
-    this.terrain.generateTrees(80);
-    this.terrain.generateRocks(25);
 
     this.player = new Player(this.renderer.getScene(), this.physics, this.cameraCtrl, this.events);
     this.player.init();
     this.player.setPosition(0, 3, 0);
+
+    this.player.inventory.push(createItem('wood_axe'));
+    this.player.inventory.push(createItem('stone_sword'));
+    this.player.inventory.push(createItem('bread', 3));
+    this.player.inventory.push(createItem('berries', 10));
 
     this.ui = new UIManager(this.events);
     this.ui.init();
@@ -95,25 +111,87 @@ export class Game {
     this.hud = new HUD(this.ui.container, this.events);
     this.hud.init();
 
+    this.mainMenu = new MainMenu(this.ui.container, this.events);
+    this.mainMenu.init();
+
+    this.pauseMenu = new PauseMenu(this.ui.container, this.events);
+    this.pauseMenu.init();
+
+    this.settingsPanel = new SettingsPanel(this.ui.container, this.events, this.audio);
+    this.settingsPanel.init();
+
+    this.inventoryUI = new InventoryUI(this.ui.container, this.events);
+    this.inventoryUI.init();
+
     this.loadingScreen = new LoadingScreen(this.ui.container);
     this.loadingScreen.init();
 
     this.touchControls = new TouchControls(document.body, this.events);
     this.touchControls.init();
 
-    this.events.on('player:death', () => this._onPlayerDeath());
-    this.events.on('player:respawned', () => this._onRespawn());
-
+    this._createInteractPrompt();
+    this._spawnResources();
+    this._setupEvents();
     this._setupResizeHandler();
 
     this.running = true;
     this.lastTime = performance.now();
 
-    await this.loadingScreen.simulateLoad(2500);
-    this.loadingScreen.dispose();
-    this.loadingScreen = null;
+    this.mainMenu.show();
+    this.touchControls.hide();
+    this.hud.element.style.display = 'none';
 
     this.save.startAutoSave(() => this._getSaveData());
+  }
+
+  _createInteractPrompt() {
+    this.interactPrompt = document.createElement('div');
+    this.interactPrompt.style.cssText = `
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, 50px);
+      color: #FFD700; font-size: 14px; font-family: Georgia, serif;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8);
+      opacity: 0; transition: opacity 0.2s;
+      pointer-events: none; z-index: 60;
+      text-align: center;
+    `;
+    document.body.appendChild(this.interactPrompt);
+  }
+
+  _setupEvents() {
+    this.events.on('menu:start', () => this._startNewGame());
+    this.events.on('menu:continue', () => this._continueGame());
+    this.events.on('pause:resume', () => this._togglePause());
+    this.events.on('pause:save', () => this._saveGame());
+    this.events.on('pause:load', () => this._loadGame());
+    this.events.on('pause:settings', () => { this.pauseMenu.hide(); this.settingsPanel.show(); });
+    this.events.on('pause:quit', () => this._quitToMenu());
+    this.events.on('player:death', () => this._onPlayerDeath());
+    this.events.on('player:respawned', () => this._onRespawn());
+    this.events.on('inventory:changed', (inv) => { this.player.inventory = inv; });
+    this.events.on('player:interact', (data) => this._handleInteract(data));
+  }
+
+  _startNewGame() {
+    this.mainMenu.hide();
+    this.touchControls.show();
+    this.hud.element.style.display = '';
+    this.gameStarted = true;
+    this.audio.resume();
+  }
+
+  _continueGame() {
+    const data = this.save.load('0');
+    if (data) {
+      this.loadSave(data);
+      this.mainMenu.hide();
+      this.touchControls.show();
+      this.hud.element.style.display = '';
+      this.gameStarted = true;
+      this.audio.resume();
+    } else {
+      this._startNewGame();
+    }
   }
 
   _setupResizeHandler() {
@@ -127,21 +205,29 @@ export class Game {
         this.renderer.getCamera().aspect = w / h;
         this.renderer.getCamera().updateProjectionMatrix();
       }
-      if (this.touchControls) {
-        this.touchControls.reposition();
-      }
+      if (this.touchControls) this.touchControls.reposition();
     });
-
-    try {
-      screen.orientation.lock('landscape').catch(() => {});
-    } catch (e) {}
-
+    try { screen.orientation.lock('landscape').catch(() => {}); } catch (e) {}
     document.body.style.cssText = `
       margin: 0; overflow: hidden; position: fixed;
       width: 100%; height: 100%; touch-action: none;
       -webkit-touch-callout: none; -webkit-user-select: none;
       user-select: none; background: #000;
     `;
+  }
+
+  _spawnResources() {
+    const types = ['tree', 'tree', 'tree', 'rock', 'rock', 'bush', 'bush', 'clay', 'flax', 'iron_ore'];
+    for (let i = 0; i < 40; i++) {
+      const type = types[Math.floor(Math.random() * types.length)];
+      const x = (Math.random() - 0.5) * 40;
+      const z = (Math.random() - 0.5) * 40;
+      const y = this.terrain.getHeightAt(x, z);
+      if (y < 0.5 || y > 6) continue;
+      const res = new ResourceNode(this.renderer.getScene(), this.physics, type, new THREE.Vector3(x, y, z));
+      res.init();
+      this.resources.push(res);
+    }
   }
 
   start() {
@@ -163,7 +249,6 @@ export class Game {
 
   _loop(now) {
     if (!this.running) return;
-
     this.delta = Math.min((now - this.lastTime) / 1000, 0.05);
     this.lastTime = now;
 
@@ -175,17 +260,18 @@ export class Game {
       this.fpsTimer -= 1;
     }
 
-    if (!this.paused) {
+    if (!this.paused && this.gameStarted) {
       this._update(this.delta);
     }
 
     this.renderer.render();
     this.input.endFrame();
-
     requestAnimationFrame((t) => this._loop(t));
   }
 
   _update(delta) {
+    if (!this.gameStarted) return;
+
     this.scenes.update(delta);
     this.sky.update(delta);
     this.water.update(delta);
@@ -205,10 +291,14 @@ export class Game {
     if (this.input.getAction('block')) this.player.block(true);
     else this.player.block(false);
     if (this.input.getActionDown('dodge')) this.player.dodge();
-    if (this.input.getActionDown('interact')) this._onInteract();
+    if (this.input.getActionDown('interact')) this._handleInteract({ pos: this.player.mesh.position });
+    if (this.input.getActionDown('inventory')) this._toggleInventory();
     if (this.input.getActionDown('pause')) this._togglePause();
 
     this._updateCamera(delta);
+    this._updatePickupPrompt();
+    this._updateResources(delta);
+    this._updateItemEntities(delta);
 
     this.player.update(delta);
     this.physics.update(delta);
@@ -218,20 +308,120 @@ export class Game {
   _updateCamera(delta) {
     if (this.cameraCtrl) {
       const look = this.input.getLookVector();
-      if (look.x !== 0 || look.y !== 0) {
-        this.cameraCtrl.rotate(look.x, look.y);
-      }
+      if (look.x !== 0 || look.y !== 0) this.cameraCtrl.rotate(look.x, look.y);
       this.cameraCtrl.update(delta);
     }
   }
 
-  _onInteract() {
-    this.events.emit('player:interact', { pos: this.player.mesh.position });
+  _updatePickupPrompt() {
+    if (!this.player) return;
+    const pPos = this.player.mesh.position;
+    let nearItem = null;
+    let nearDist = 2.5;
+    for (const item of this.itemEntities) {
+      if (!item.alive) continue;
+      const dist = item.mesh.position.distanceTo(pPos);
+      if (dist < nearDist) {
+        nearDist = dist;
+        nearItem = item;
+      }
+    }
+    if (nearItem) {
+      const def = getItemDef(nearItem.itemId);
+      this.interactPrompt.textContent = `[E] Pick up ${def?.name || nearItem.itemId} x${nearItem.quantity}`;
+      this.interactPrompt.style.opacity = '1';
+    } else {
+      this.interactPrompt.style.opacity = '0';
+    }
+  }
+
+  _updateResources(delta) {
+    for (const res of this.resources) {
+      res.update(delta);
+    }
+  }
+
+  _updateItemEntities(delta) {
+    for (let i = this.itemEntities.length - 1; i >= 0; i--) {
+      const item = this.itemEntities[i];
+      item.update(delta);
+      if (!item.alive || item.age >= 120) {
+        item.dispose();
+        this.itemEntities.splice(i, 1);
+      }
+    }
+  }
+
+  _handleInteract(data) {
+    const pPos = data.pos || this.player.mesh.position;
+    let nearItem = null;
+    let nearDist = 2.5;
+    for (const item of this.itemEntities) {
+      if (!item.alive) continue;
+      const dist = item.mesh.position.distanceTo(pPos);
+      if (dist < nearDist) {
+        nearDist = dist;
+        nearItem = item;
+      }
+    }
+    if (nearItem) {
+      const added = addToInventory(this.player.inventory, nearItem.itemId, nearItem.quantity);
+      if (added === 0) {
+        this.audio.playSFX('pickup', 0.5);
+        nearItem.dispose();
+        const idx = this.itemEntities.indexOf(nearItem);
+        if (idx !== -1) this.itemEntities.splice(idx, 1);
+        this.events.emit('inventory:changed', this.player.inventory);
+      }
+    }
+  }
+
+  _toggleInventory() {
+    this.inventoryUI.toggle(this.player.inventory);
+    if (this.inventoryUI.isVisible()) {
+      this.pause();
+      this.touchControls.hide();
+    } else {
+      this.resume();
+      this.touchControls.show();
+    }
   }
 
   _togglePause() {
-    if (this.paused) this.resume();
-    else this.pause();
+    if (this.inventoryUI.isVisible()) {
+      this.inventoryUI.hide();
+      this.touchControls.show();
+    }
+    if (this.paused) {
+      this.pauseMenu.hide();
+      this.resume();
+    } else {
+      this.pause();
+      this.pauseMenu.show();
+    }
+  }
+
+  _saveGame() {
+    if (this.save.save('0', this._getSaveData())) {
+      this.events.emit('player:message', { text: 'Game Saved!' });
+    }
+  }
+
+  _loadGame() {
+    const data = this.save.load('0');
+    if (data) {
+      this.loadSave(data);
+      this.events.emit('player:message', { text: 'Game Loaded!' });
+    }
+  }
+
+  _quitToMenu() {
+    this.pauseMenu.hide();
+    this.paused = false;
+    this.gameStarted = false;
+    this.touchControls.hide();
+    this.hud.element.style.display = 'none';
+    this.mainMenu.show();
   }
 
   _onPlayerDeath() {
@@ -307,6 +497,8 @@ export class Game {
     this.save.stopAutoSave();
     if (this.input) this.input.dispose();
     if (this.audio) this.audio.dispose();
+    for (const r of this.resources) r.dispose();
+    for (const i of this.itemEntities) i.dispose();
     if (this.player) this.player.dispose();
     if (this.terrain) this.terrain.dispose();
     if (this.sky) this.sky.dispose();
@@ -314,8 +506,16 @@ export class Game {
     if (this.physics) this.physics.dispose();
     if (this.touchControls) this.touchControls.dispose();
     if (this.hud) this.hud.dispose();
+    if (this.mainMenu) this.mainMenu.dispose();
+    if (this.pauseMenu) this.pauseMenu.dispose();
+    if (this.settingsPanel) this.settingsPanel.dispose();
+    if (this.inventoryUI) this.inventoryUI.dispose();
+    if (this.loadingScreen) this.loadingScreen.dispose();
     if (this.ui) this.ui.dispose();
     if (this.renderer) this.renderer.dispose();
     if (this.scenes) this.scenes.dispose();
+    if (this.interactPrompt && this.interactPrompt.parentNode) {
+      this.interactPrompt.parentNode.removeChild(this.interactPrompt);
+    }
   }
 }

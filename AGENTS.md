@@ -19,28 +19,35 @@ Medieval life survival sim — third-person 3D browser game built with Three.js 
 - AGENTS.md session context system
 - First commit pushed to main
 
+### Session 2 (July 3, 2026)
+- Phase 2 Core Systems: 9/12 tasks completed
+- Created Inventory system with full item definitions (30+ items across 6 categories)
+- Created InventoryUI with 30-slot grid, drag-and-drop, categories, durability bars
+- Created MainMenu (New Game, Continue, Settings, Credits)
+- Created PauseMenu (Resume, Save, Load, Settings, Quit)
+- Created SettingsPanel (graphics quality tiers, master/music/SFX sliders, controls info)
+- Created ResourceNode entity (tree, rock, iron_ore, bush, clay, flax with harvest/respawn)
+- Created ItemEntity (dropped items on ground with bob/glow/animation)
+- Updated Game.js with full menu flow, inventory toggle, resource spawning, item pickup/prompt
+- Fixed vite.config.js for Vite 8 compatibility (eval removed from MainMenu)
+
 ## Current State
-- Game initializes and runs (game loop, terrain, sky, water, player, input, touch controls)
-- Player can move, jump, attack, block, dodge
-- Day/night cycle and season system
-- Vital stats with HUD display
-- Touch controls with virtual joystick + action buttons
-- Audio with procedural SFX generation
-- Save/load with auto-save
+- Full game flow: Main Menu → New Game/Continue → Gameplay → Pause/Inventory/Settings
+- 40+ resource nodes spawn on terrain (trees, rocks, bushes, ore, clay, flax)
+- Items can be picked up from ground (interact prompt shows, [E] to pick up)
+- Inventory UI with 30-slot grid, 6 categories, drag-and-drop, durability display
+- Main menu with New Game, Continue, Settings, Credits
+- Pause menu with Resume, Save, Load, Settings, Quit to Menu
+- Settings with 5 graphics quality tiers and audio volume sliders
 
 ## What's Next
-Phase 1 remaining tasks (unchecked in ROADMAP.md):
-- The code is written but needs Git tracking. First large commit done.
-- Next session: test the build, fix any issues, then begin working through unchecked Phase 1 tasks (zone loading system, etc.) or move to Phase 2.
-
-## Pending Decisions
-- None yet — all design decisions made.
+- Phase 2 remaining: Zone loading system (hub + 6 zones with fade transitions)
+- Then Phase 3: Combat (lock-on, combos, enemy AI, weapon tiers, armor)
 
 ## Known Issues
-- Physics capsule shape may need tuning for player movement feel
-- Touch control layout needs responsive repositioning on orientation change
-- Player mesh is procedural — can enhance with more detail later
-- AudioContext autoplay policy: must resume on first user interaction (handled in AudioManager)
+- Resource respawning needs timer tuning
+- Touch controls repositioning on orientation change needs testing
+- Zone system still loads single world -- multi-zone gates not yet implemented
 
 ## Commands
 ```bash

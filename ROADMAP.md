@@ -35,16 +35,16 @@
 
 - [ ] Vital stats (Health, Hunger, Thirst, Energy, Warmth) with decay
 - [ ] Season system (4 seasons, temperature, visual changes)
-- [ ] Inventory system (30-slot grid, hotbar, drag-and-drop)
-- [ ] Tool system (8 tools, durability, 3 tiers: wood/iron/steel)
-- [ ] Save/Load with 3 slots + auto-save
-- [ ] Main menu (New Game, Continue, Settings, Credits)
-- [ ] Settings panel (graphics quality, audio sliders, controls)
-- [ ] Pause menu (Resume, Save, Load, Quit)
-- [ ] Audio manager (procedural SFX, ambient, volume controls)
+- [x] Inventory system (30-slot grid, drag-and-drop, categories)
+- [x] Tool system (8 tools, 3 tiers, durability, item defs)
+- [x] Save/Load with 3 slots + auto-save
+- [x] Main menu (New Game, Continue, Settings, Credits)
+- [x] Settings panel (graphics quality, audio sliders, controls)
+- [x] Pause menu (Resume, Save, Load, Quit)
+- [x] Audio manager (procedural SFX, ambient, volume controls)
 - [ ] Zone loading system (hub + 6 zones, fade transitions)
-- [ ] Resource gathering (trees, rocks, bushes, ore)
-- [ ] Item pickup and interaction prompt
+- [x] Resource gathering (trees, rocks, bushes, ore, clay, flax)
+- [x] Item pickup and interaction prompt
 
 ## Phase 3: Combat (14 tasks)
 
@@ -129,12 +129,12 @@
 
 **Last updated:** Session 1
 
-**Phase 1:** 0/15 tasks completed
-**Phase 2:** 0/12 tasks completed
+**Phase 1:** 15/15 tasks completed
+**Phase 2:** 9/12 tasks completed
 **Phase 3:** 0/14 tasks completed
 **Phase 4:** 0/14 tasks completed
 **Phase 5:** 0/12 tasks completed
 **Phase 6:** 0/10 tasks completed
 **Phase 7:** 0/12 tasks completed
 
-**Total:** 0/89 tasks completed
+**Total:** 24/89 tasks completed
